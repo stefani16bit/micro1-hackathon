@@ -1,0 +1,30 @@
+# Frozen before turn 1. has_experience decides behavioural vs situational
+# phrasing, so it must not move once the interview starts.
+# Every quote below was checked against the CV text in code.
+evidence:
+- slot_id: frontend
+  has_experience: false
+  evidence_quote: ''
+- slot_id: backend
+  has_experience: true
+  evidence_quote: Developed and maintained payment microservices processing thousands
+    of daily transactions across credit card, boleto and Pix, for one of Brazil's
+    largest cosmetics companies and its nationwide franchise network. Built in TypeScript
+    and Node.js applying Clean Architecture, Domain-Driven Design and TDD.
+- slot_id: api_contract
+  has_experience: true
+  evidence_quote: provisioned and configured API Gateways with Cognito authorizers,
+    HTTP/consumer Lambdas over SNS/SQS, IAM roles and resource policies, base path
+    mappings, rate limiting, timeouts and stage configuration.
+- slot_id: data_layer
+  has_experience: true
+  evidence_quote: Managed database schema evolution through Knex migrations, and wrote
+    and optimized SQL queries powering regulatory reporting files for payments processing,
+    cutting file generation from 20 minutes to 1.5 minutes.
+- slot_id: cross_boundary_debugging
+  has_experience: false
+  evidence_quote: ''
+- slot_id: code_quality
+  has_experience: true
+  evidence_quote: Built in TypeScript and Node.js applying Clean Architecture, Domain-Driven
+    Design and TDD.
