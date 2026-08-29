@@ -1,5 +1,6 @@
-# DRAFT - human review of the L1 extraction. Approve, then rename to slots.yaml and commit.
-# This file is the denominator of the primary metric. Once frozen it is read-only.
+# FROZEN - reviewed and approved 2026-08-29. This file is read-only for the rest of the
+# project: it is the denominator of the primary metric, so changing it would silently
+# invalidate every comparison across iterations.
 #
 # The raw L1 output is preserved in slots.l1-raw.yaml. Four defects were corrected here:
 #   1. "integration" appeared as a keyword in two different slots, making the denominator
@@ -16,7 +17,7 @@ role: fullstack
 source: >-
   https://jobs.micro1.ai/post/e4af7669-a52f-4f24-95f4-621259887aef
   (micro1 public job board, posted 2026-08-14, retrieved 2026-08-29)
-frozen_at: ''
+frozen_at: '2026-08-29'
 slots:
   - id: frontend
     name: frontend development
