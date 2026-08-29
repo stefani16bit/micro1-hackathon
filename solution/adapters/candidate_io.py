@@ -123,13 +123,18 @@ class FrozenOpeningIO(CandidateIO):
 class SmokeIO(CandidateIO):
     """A canned candidate, for verifying the pipeline end to end without a 25-minute sitting.
 
-    Never used for a measured run: every answer is the same short placeholder, so nothing
-    it produces is evidence about anything.
+    Never used for a measured run. The answers rotate rather than repeat for one reason:
+    a candidate that says the same thing to every question makes the interviewer re-ask
+    instead of moving on, and a smoke transcript that looks like tunneling is worse than
+    useless - it invites a conclusion the run cannot support. These answers are short,
+    distinct and obviously placeholder, so nothing here reads as evidence about anything.
     """
 
-    ANSWER = (
-        "I worked on that at Thoughtworks, mostly in TypeScript and Node.js. "
-        "It went well and we shipped it."
+    ANSWERS = (
+        "[smoke placeholder] I did that at Thoughtworks, in TypeScript and Node.js.",
+        "[smoke placeholder] Mostly on AWS - Lambda, SQS and Cognito.",
+        "[smoke placeholder] At Accenture, in Python, with SQL behind it.",
+        "[smoke placeholder] I have not done that one hands-on.",
     )
 
     def __init__(self, seconds_per_answer: float = 60.0) -> None:
@@ -141,5 +146,6 @@ class SmokeIO(CandidateIO):
         print(f"\n{_RULE}\nINTERVIEWER  ({len(self.questions)})\n{_RULE}\n{text}")
 
     def collect(self, deadline_seconds: int) -> Answer:
-        print(f"\nCANNED ANSWER ({self.seconds_per_answer:.0f}s of the budget)")
-        return Answer(text=self.ANSWER, seconds_used=self.seconds_per_answer, timed_out=False)
+        answer = self.ANSWERS[(len(self.questions) - 1) % len(self.ANSWERS)]
+        print(f"\nCANNED ANSWER ({self.seconds_per_answer:.0f}s of the budget)\n{answer}")
+        return Answer(text=answer, seconds_used=self.seconds_per_answer, timed_out=False)

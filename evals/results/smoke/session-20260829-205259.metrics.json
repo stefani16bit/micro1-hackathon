@@ -1,0 +1,79 @@
+{
+  "session": "session-20260829-205259.jsonl",
+  "is_smoke_run": true,
+  "metadata": {
+    "iteration": 0,
+    "provider": "ollama",
+    "model": "gemma4:12b",
+    "commit": "316b4ac",
+    "role": "roles/fullstack",
+    "case": "evals/cases/case-01",
+    "slot_ids": [
+      "frontend",
+      "backend",
+      "api_contract",
+      "data_layer",
+      "cross_boundary_debugging",
+      "code_quality"
+    ],
+    "slot_plan_frozen_at": "2026-08-29",
+    "total_seconds": 500,
+    "answer_deadline_seconds": 120
+  },
+  "denominator": 6,
+  "coverage": {
+    "covered_slots": [
+      "api_contract"
+    ],
+    "missed_slots": [
+      "backend",
+      "code_quality",
+      "cross_boundary_debugging",
+      "data_layer",
+      "frontend"
+    ],
+    "value": 0.167
+  },
+  "carry_over_rate": 1.0,
+  "grounding_rate": 0.5,
+  "questions_measured": 4,
+  "resolved_by": {
+    "rule": 1,
+    "judge": 0,
+    "unresolved": 3
+  },
+  "questions": [
+    {
+      "index": 1,
+      "text": "It's impressive to see such a strong foundation in both backend architecture and cloud infrastructure, especially with the scale of transactions you've been handling. Since this role involves creating environments to test AI's ability to solve full-stack problems, it's crucial to have a clear grasp of how the frontend and backend interact. Could you describe a time when you had to debug a complex issue that originated in the frontend but was actually caused by a backend or infrastructure misconfiguration?",
+      "slot_id": null,
+      "resolved_by": "unresolved",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 2,
+      "text": "That's a great start, but could you walk me through the specific technical details of that situation? I'd love to hear how you identified the root cause, what the specific symptoms were in the frontend, and how you ultimately resolved the backend or infrastructure issue.",
+      "slot_id": null,
+      "resolved_by": "unresolved",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 3,
+      "text": "I understand that the project was successful, but to help me gauge your technical depth for this specific role, could you walk me through the actual technical 'path' of that bug? For example, what was the specific error or behavior the user saw on the frontend, and what specific backend component or infrastructure configuration (like a Lambda, API Gateway, or database issue) was actually causing it?",
+      "slot_id": null,
+      "resolved_by": "unresolved",
+      "carry_over": true,
+      "grounded": true
+    },
+    {
+      "index": 4,
+      "text": "I appreciate that the project was successful, but since this role involves creating high-quality training data for AI, I need to see how you communicate the 'why' and 'how' behind your technical decisions. Let's try a different example to get more detail. Can you describe a specific technical challenge you faced while building the payment microservices or the automation tools at Accenture? Tell me about a time you had to solve a complex logic problem or a tricky integration issue.",
+      "slot_id": "api_contract",
+      "resolved_by": "rule",
+      "carry_over": true,
+      "grounded": true
+    }
+  ]
+}
