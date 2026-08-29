@@ -92,6 +92,34 @@ grounding, and that is the failure mode the guardrail exists to catch.
 
 ---
 
+## 3b. Amendment, 2026-08-29 — which model runs the ladder
+
+Added before any measured run, and for a specific reason: choosing the provider *after* seeing
+which one tunnels more would be the same offence as re-running until the prediction confirms. So
+the choice is made here, in advance, on stated grounds.
+
+- **The ladder runs on `ollama/gemma4:12b`**, all eleven iterations. It is the default in
+  `config.yaml`, it is free, and a reviewer reproduces the main result with `ollama pull
+  gemma4:12b` and nothing else — no subscription, no API key. It is also the honest deployment for
+  a system running ~1,600 interviews a day.
+- **Iterations 0 and 10 are additionally run on `claude_cli`**, declared now, as a cross-model
+  check. If the effect holds on both a 12B local model and a frontier model, the claim that this
+  result is about architecture rather than about one model is measured rather than asserted.
+
+Whatever these runs show is reported, including the case where the strong model does not tunnel and
+the weak one does — that would itself be the finding, and a more interesting one than the
+prediction.
+
+**Context for this amendment.** Two pipeline smoke runs were executed before it (recorded under
+`evals/results/smoke/`, on both providers). They are **not measurements**: the canned candidate
+returns the same generic sentence to every question, so both models re-asked rather than moving on —
+persistence against a non-answer, not topic selection. They are noted here only because both
+providers spent their second turn on the candidate's *gap* rather than on the material the opening
+answer offered, which runs against the prediction in §3. That is weak, confounded evidence and it
+changes nothing about the prediction, which stands as written.
+
+---
+
 ## 4. What would invalidate the result
 
 Stated now so it cannot be negotiated later:
