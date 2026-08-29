@@ -1,0 +1,68 @@
+# DRAFT - review every line, then rename to slots.yaml and commit.
+# This file is the denominator of the primary metric. Once frozen it is read-only.
+role: fullstack
+source: see role.txt header
+frozen_at: ''
+slots:
+- id: frontend_frameworks
+  name: frontend (react, angular, vue)
+  kind: language_framework
+  rank: 1
+  keywords:
+  - react
+  - angular
+  - vue
+  - frontend
+- id: backend_development
+  name: backend (node.js, nest.js, go, python)
+  kind: language_framework
+  rank: 2
+  keywords:
+  - node.js
+  - nest.js
+  - golang
+  - go
+  - python
+  - fastapi
+  - backend
+- id: api_integration
+  name: api integration (rest, fastapi)
+  kind: cross_cutting
+  rank: 3
+  keywords:
+  - api
+  - rest
+  - fastapi
+  - integration
+- id: typescript_javascript
+  name: typescript/javascript
+  kind: language_framework
+  rank: 4
+  keywords:
+  - typescript
+  - typescript
+  - javascript
+  - js
+- id: full_stack_integration
+  name: full-stack integration
+  kind: cross_cutting
+  rank: 5
+  keywords:
+  - full-stack
+  - integration
+  - boundary
+  - connection
+- id: debugging_troubleshooting
+  name: debugging and troubleshooting
+  kind: cross_cutting
+  rank: 6
+  keywords:
+  - debugging
+  - troubleshoot
+  - bug
+  - resolve
+excluded:
+- name: technical documentation
+  reason: beyond the top 6 competencies that fit the 25-minute budget
+- name: code review
+  reason: beyond the top 6 competencies that fit the 25-minute budget

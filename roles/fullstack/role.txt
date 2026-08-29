@@ -1,0 +1,60 @@
+# SOURCE
+#   https://jobs.micro1.ai/post/e4af7669-a52f-4f24-95f4-621259887aef
+#   micro1 public job board. Posted 2026-08-14, retrieved 2026-08-29.
+#   Reproduced for evaluation purposes with the source cited; no company-internal or
+#   candidate data is included. Compensation and application-form fields were dropped as
+#   irrelevant to interview content; everything below is the posting's own wording.
+#
+# This posting is used as the evaluation role precisely because it is a real micro1
+# opening: candidates who apply to it are screened by the AI interviewer this project
+# examines.
+
+Job Title: Full Stack Developer
+Job Type: Contractor
+Location: Remote
+Openings: 50
+
+## About the role
+
+micro1 is selecting skilled Full Stack Developers to support a customer's innovative
+project. In this role, you'll apply your end-to-end development expertise to help train
+next-generation AI systems. Your work will shape how models learn, reason, and perform
+through high-quality, real-world input. No prior experience in AI is required - your
+development skills are what matter.
+
+As an expert, you will be creating Reinforcement Learning Environments which test an AI
+model's ability to solve full-stack software problems, spanning frontend, backend, and the
+connection between them. You will be tasked with creating a reproducible environment and a
+golden reference solution for the problem.
+
+## Scope of Work
+
+- Contribute clear code samples, debugging approaches, and development insights across
+  frontend and backend, using languages like JavaScript/TypeScript, Python3, Java, or Go.
+- Identify, troubleshoot, and resolve bugs that span both the UI and the underlying API or
+  database layer.
+- Build small to medium features end-to-end, from the interface through to the data layer,
+  following good coding practices.
+- Improve existing frontend and backend code to make it cleaner, more consistent, and
+  easier to maintain.
+- Document your reasoning, approach, and code decisions to support AI training data
+  quality.
+- Review peer-contributed code and technical submissions for correctness and clarity.
+
+## Preferred Qualifications
+
+- 1+ years of hands-on experience building both frontend and backend applications.
+- Comfortable with at least one frontend framework (React, Vue, or Angular) and one backend
+  stack (Node/Express, Python/Django/Flask, Java/Spring, or similar).
+- Solid understanding of how frontend and backend systems connect through APIs.
+- Ability to debug issues that cross the frontend/backend boundary.
+- Good documentation and communication skills to explain your technical decisions clearly.
+- Interest in or curiosity about AI and its technical challenges (previous AI experience
+  not required).
+
+## Required Skills
+
+As listed in the posting's structured `required_skills` field:
+
+Node.js, TypeScript, React, Angular, GoLang, API Integrations, FastAPI, REST API,
+React Native, Shopify, WordPress, Nest.js

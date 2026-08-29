@@ -1,0 +1,67 @@
+# DRAFT - human review of the L1 extraction. Approve, then rename to slots.yaml and commit.
+# This file is the denominator of the primary metric. Once frozen it is read-only.
+#
+# The raw L1 output is preserved in slots.l1-raw.yaml. Four defects were corrected here:
+#   1. "integration" appeared as a keyword in two different slots, making the denominator
+#      ambiguous. Keywords are now disjoint across slots.
+#   2. typescript_javascript was dropped as a slot. Every frontend and backend answer
+#      mentions TS/JS, so a slot that any answer satisfies inflates coverage for free.
+#   3. full_stack_integration and api_integration measured the same thing; merged into
+#      api_contract.
+#   4. L1 read the required_skills list and under-weighted the Scope of Work. The posting
+#      names the database layer twice and had no slot; documentation and code review were
+#      cut as surplus although in this role - producing AI training data - they are the
+#      deliverable. Both are restored.
+role: fullstack
+source: >-
+  https://jobs.micro1.ai/post/e4af7669-a52f-4f24-95f4-621259887aef
+  (micro1 public job board, posted 2026-08-14, retrieved 2026-08-29)
+frozen_at: ''
+slots:
+  - id: frontend
+    name: frontend development
+    kind: language_framework
+    rank: 1
+    keywords: [frontend, react, angular, vue, react native, ui, component, browser]
+
+  - id: backend
+    name: backend development
+    kind: language_framework
+    rank: 2
+    keywords: [backend, node.js, nest.js, express, fastapi, django, flask, golang, server, service]
+
+  - id: api_contract
+    name: the API contract between frontend and backend
+    kind: cross_cutting
+    rank: 3
+    keywords: [api, rest, endpoint, contract, integration, payload, http, request]
+
+  - id: data_layer
+    name: the data layer
+    kind: data_storage
+    rank: 4
+    keywords: [database, sql, schema, query, storage, data layer, migration, table, persistence]
+
+  - id: cross_boundary_debugging
+    name: debugging across the frontend and backend boundary
+    kind: cross_cutting
+    rank: 5
+    keywords: [debugging, bug, troubleshoot, root cause, reproduce, stack trace, incident]
+
+  - id: code_quality
+    name: code quality, review and documentation
+    kind: cross_cutting
+    rank: 6
+    keywords: [refactor, code review, maintainable, readability, documentation, coding practices]
+
+excluded:
+  - name: Shopify and WordPress platform work
+    reason: >-
+      listed in the posting's required_skills field but absent from the Scope of Work;
+      too narrow to spend one of six slots on
+  - name: React Native / mobile
+    reason: folded into the frontend slot rather than given a slot of its own
+  - name: interest in AI and its technical challenges
+    reason: >-
+      the posting states no prior AI experience is required, so this is a disposition
+      rather than a competency a candidate can be asked to evidence
