@@ -26,6 +26,8 @@ interview:
   # The budget technically fits ~10 primary questions at 135 s each. Six leaves room for
   # follow-ups; competencies beyond the sixth are recorded in slots.yaml as excluded.
   max_slots: 6
+  # The opening answer is replayed verbatim, so it is charged a constant time cost too.
+  opening_answer_seconds: 100
 
 role: roles/fullstack
 case: evals/cases/case-01

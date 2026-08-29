@@ -24,22 +24,27 @@ pasted identically every time.
 
 ---
 
-## Draft — rewrite this in your own voice
+## The answer
 
-> Sure. I'm a software engineer with about three and a half years of experience, currently a
-> consultant at Thoughtworks. For the past year I've been working on payment microservices for one
-> of the largest cosmetics companies in Brazil — handling credit card, boleto and Pix across their
-> franchise network, processing thousands of transactions a day. It's built in TypeScript and
-> Node.js, and we follow Clean Architecture, Domain-Driven Design and TDD pretty strictly.
->
-> A big part of my work there has been owning things end to end, not just the application code —
-> I've provisioned and configured the AWS infrastructure the services run on: API Gateways, Cognito
-> authorizers, Lambdas over SNS and SQS, the IAM side of it. Before Thoughtworks I was at Accenture
-> for about a year and a half, doing backend work in Python, Java and SQL, and building automations
-> that replaced manual back-office routines.
->
-> I'm finishing my Computer Science degree at São Judas this year, and lately I've been working a
-> lot with AI-assisted development — Claude Code, Kiro, Devin — using spec-driven development.
+**The block below is what the runner reads and replays.** Edit it into your own voice; the fenced
+block is the frozen artifact, so nothing outside it is used.
+
+```
+Sure. I'm a software engineer with about three and a half years of experience, currently a
+consultant at Thoughtworks. For the past year I've been working on payment microservices for one of
+the largest cosmetics companies in Brazil - handling credit card, boleto and Pix across their
+franchise network, processing thousands of transactions a day. It's built in TypeScript and
+Node.js, and we follow Clean Architecture, Domain-Driven Design and TDD pretty strictly.
+
+A big part of my work there has been owning things end to end, not just the application code - I've
+provisioned and configured the AWS infrastructure the services run on: API Gateways, Cognito
+authorizers, Lambdas over SNS and SQS, the IAM side of it. Before Thoughtworks I was at Accenture
+for about a year and a half, doing backend work in Python, Java and SQL, and building automations
+that replaced manual back-office routines.
+
+I'm finishing my Computer Science degree at Sao Judas this year, and lately I've been working a lot
+with AI-assisted development - Claude Code, Kiro, Devin - using spec-driven development.
+```
 
 ---
 
