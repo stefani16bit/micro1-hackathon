@@ -1,0 +1,80 @@
+# Base technical lexicon for carry-over detection.
+# Lowercase, one term per line. Multi-word entries are matched on word boundaries.
+# Terms the heuristics already catch (PostgreSQL, API, Node.js) do not need an entry;
+# this list exists for all-lowercase terms that no heuristic can recognise.
+react
+redux
+angular
+vue
+svelte
+django
+flask
+fastapi
+express
+rails
+spring
+laravel
+hooks
+redis
+kafka
+rabbitmq
+postgres
+mysql
+sqlite
+mongo
+mongodb
+elasticsearch
+docker
+kubernetes
+terraform
+ansible
+jenkins
+nginx
+serverless
+lambda
+microservices
+monolith
+webhooks
+websockets
+caching
+sharding
+indexing
+migrations
+authentication
+authorization
+oauth
+oauth2
+sessions
+middleware
+pagination
+throttling
+observability
+logging
+tracing
+profiling
+linting
+mocking
+fixtures
+pytest
+jest
+cypress
+playwright
+selenium
+code review
+pair programming
+unit testing
+integration testing
+load testing
+continuous integration
+continuous delivery
+feature flags
+blue-green deployment
+canary release
+infrastructure as code
+message queue
+rate limiting
+connection pooling
+database migration
+schema design
+query optimisation
+query optimization
