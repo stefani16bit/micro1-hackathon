@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Personal data: the un-redacted CV never enters the repository (ground rule 8).
+evals/cases/**/cv-original.pdf
+
+# Third-party paper: freely available at arxiv.org/abs/2507.02869, not redistributed here.
+zara-paper.pdf
