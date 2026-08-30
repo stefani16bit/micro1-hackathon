@@ -8,10 +8,11 @@ no longer hold.
 
 from __future__ import annotations
 
+import asyncio
 import sys
 import time
 
-from prompt_toolkit import prompt as pt_prompt
+from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
 from rich.console import Console
@@ -40,17 +41,18 @@ def _clock(seconds: float) -> str:
 
 
 class ConsoleIO(CandidateIO):
-    """Reads an answer with full line editing and a live countdown.
+    """Reads an answer with full line editing, a live countdown, and a hard deadline.
 
-    The countdown runs in prompt_toolkit's bottom toolbar, which repaints on its own
-    timer without disturbing the line being typed - the reason a plain `input()` could
-    not show one.
+    prompt_toolkit owns the event loop, which makes all three possible at once. A plain
+    `input()` could offer none of them: it blocks, so no countdown can repaint and no
+    timer can interrupt it. Every earlier compromise here came from that limitation, not
+    from a design preference.
 
-    The deadline stays a target rather than a cut, as recorded in PREREGISTRATION.md: the
-    answer is accepted whenever it is submitted, the real time is recorded, and going over
-    is flagged. If answers lengthen across iterations - shortening interviews and
-    depressing coverage for a reason that is not the interviewer - that surfaces as a
-    number rather than hiding inside one.
+    At the deadline the prompt is closed and **whatever has been typed becomes the
+    answer**. That keeps the rule the candidate specified - an answer not submitted in
+    time does not stop the interview - while removing a confound it would otherwise
+    leave: if answers were allowed to run long, they would lengthen across iterations,
+    shorten the interviews and depress coverage for a reason that is not the interviewer.
     """
 
     def __init__(self) -> None:
@@ -78,38 +80,41 @@ class ConsoleIO(CandidateIO):
     def _toolbar(self, started: float, deadline_seconds: int):
         def render() -> HTML:
             spent = time.perf_counter() - started
-            answer_left = deadline_seconds - spent
+            answer_left = max(0.0, deadline_seconds - spent)
             if answer_left > 45:
                 colour = "ansigreen"
             elif answer_left > 15:
                 colour = "ansiyellow"
             else:
                 colour = "ansired"
-            label = _clock(answer_left) if answer_left >= 0 else f"-{_clock(-answer_left)}"
             parts = [
-                f' this answer <style fg="{colour}"><b>{label}</b></style>',
-                f"target {_clock(deadline_seconds)}",
+                f' this answer <style fg="{colour}"><b>{_clock(answer_left)}</b></style>',
             ]
             if self._total:
-                parts.append(f"interview {_clock(self._total - self._elapsed - spent)} left")
+                remaining = max(0.0, self._total - self._elapsed - spent)
+                parts.append(f"interview {_clock(remaining)} left")
             parts.append("Enter submits")
             return HTML("   |   ".join(parts) + " ")
 
         return render
 
-    def collect(self, deadline_seconds: int) -> Answer:
+    async def _read_with_deadline(self, deadline_seconds: int) -> tuple[str, bool]:
+        """Return (text, was_cut). At the deadline the prompt closes and keeps the draft."""
+        session: PromptSession[str] = PromptSession()
         started = time.perf_counter()
-        if not sys.stdin.isatty():
-            # No terminal to draw a toolbar on. Degrade to a plain read rather than crash.
-            text = sys.stdin.readline().rstrip("\n")
-            elapsed = time.perf_counter() - started
-            return Answer(
-                text=text.strip(),
-                seconds_used=elapsed,
-                over_deadline=elapsed > deadline_seconds,
-            )
+        was_cut = False
+
+        async def cut() -> None:
+            nonlocal was_cut
+            await asyncio.sleep(deadline_seconds)
+            was_cut = True
+            application = session.app
+            if application.is_running:
+                application.exit(result=session.default_buffer.text)
+
+        timer = asyncio.ensure_future(cut())
         try:
-            text = pt_prompt(
+            text = await session.prompt_async(
                 "> ",
                 style=_ANSWER_STYLE,
                 bottom_toolbar=self._toolbar(started, deadline_seconds),
@@ -117,14 +122,26 @@ class ConsoleIO(CandidateIO):
             )
         except EOFError:
             text = ""
-        elapsed = time.perf_counter() - started
-        over_deadline = elapsed > deadline_seconds
-        if over_deadline:
-            target = _clock(deadline_seconds)
+        finally:
+            timer.cancel()
+        return text, was_cut
+
+    def collect(self, deadline_seconds: int) -> Answer:
+        started = time.perf_counter()
+
+        if not sys.stdin.isatty():
+            # No terminal to draw a toolbar on. Degrade to a plain read rather than crash.
+            text, was_cut = sys.stdin.readline().rstrip("\n"), False
+        else:
+            text, was_cut = asyncio.run(self._read_with_deadline(deadline_seconds))
+
+        elapsed = min(time.perf_counter() - started, float(deadline_seconds))
+        if was_cut:
             self._console.print(
-                f"[dim]{_clock(elapsed)} - over the {target} target, recorded[/dim]"
+                f"[dim]{_clock(deadline_seconds)} reached - "
+                f"kept what you had written and moved on[/dim]"
             )
-        return Answer(text=text.strip(), seconds_used=elapsed, over_deadline=over_deadline)
+        return Answer(text=text.strip(), seconds_used=elapsed, over_deadline=was_cut)
 
 
 class FrozenOpeningIO(CandidateIO):

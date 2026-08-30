@@ -138,9 +138,11 @@ def measure_session(
             round(sum(m.grounded for m in measurements) / asked, 3) if asked else 0.0
         ),
         "questions_measured": asked,
-        # Recorded because the answer deadline is a target rather than a hard cut. If
-        # answers lengthen across iterations, interviews shorten and coverage falls for a
-        # reason that is not the interviewer - this is where that would become visible.
+        # The deadline is enforced, so answers cannot lengthen across iterations and
+        # quietly shorten the interviews. What these two numbers show instead is how often
+        # the respondent ran out of time: a run where several answers were cut carries
+        # less evidence per slot than one where none were, and a reader should be able to
+        # see that rather than infer it.
         "answer_seconds_mean": (
             round(sum(answer_seconds) / len(answer_seconds), 1) if answer_seconds else 0.0
         ),
