@@ -92,7 +92,46 @@ grounding, and that is the failure mode the guardrail exists to catch.
 
 ---
 
-## 3b. Amendment, 2026-08-29 — which model runs the ladder
+## 3c. Amendment, 2026-08-30 — the ladder moves to Claude Sonnet 4.5
+
+Supersedes §3b below. Made **before any measured run**, and recorded rather than quietly applied.
+
+- **The ladder runs on `claude-sonnet-4-5-20250929`** (Claude Code CLI), all eleven iterations.
+- **Iterations 0 and 10 additionally run on `ollama/gemma4:12b`** as the cross-model check —
+  the same design as §3b, with the two sides swapped.
+- **The judge runs on `ollama/gemma4:12b`**, because it must not share a model with the system it
+  measures.
+
+**Why.** The project author's judgement: a baseline running on a model strong enough not to tunnel
+would measure model capability rather than architecture, and the interviewer should sit in a
+capability tier where the failure can plausibly occur.
+
+**What this is not.** It is **not** an attempt to match the model Zara runs. Claude Sonnet 3.5 —
+the contemporary of the GPT-4o the paper names — was retired on 2025-10-28, and nothing currently
+served is a proxy for GPT-4o. No claim of resemblance is made anywhere in this project, and the
+statement in §5 that nothing is claimed about Zara's implementation stands unchanged.
+
+**What it costs, stated plainly:**
+
+- **Reproducibility.** Reproducing the headline result now requires a Claude Code subscription.
+  The free path — `ollama pull gemma4:12b` and nothing else — reproduces the cross-check at
+  iterations 0 and 10, not the full ladder. This is a real regression against CLAUDE.md's
+  requirement that a reviewer reach the main result from a clean environment, and it is disclosed
+  in the README rather than hidden.
+- **A higher chance the prediction fails.** Sonnet 4.5 is considerably stronger than a 12B local
+  model, so iteration 0 covering ≥ 3/6 is now materially more likely. The falsification clause in
+  §3 is unchanged and will be applied as written: if it fires, it gets recorded and the premise is
+  re-examined, not reframed.
+- **A weaker judge.** Moving the judge to a 12B model lowers the quality of the labelling it
+  resolves. Every result reports the share resolved by rule versus by judge, so a reader can see
+  exactly how much of a number rests on it.
+
+Model ids are pinned to dated snapshots throughout. An alias resolves to whatever is current, which
+would silently change the experiment for anyone running it later.
+
+---
+
+## 3b. Amendment, 2026-08-29 — which model runs the ladder *(superseded by §3c)*
 
 Added before any measured run, and for a specific reason: choosing the provider *after* seeing
 which one tunnels more would be the same offence as re-running until the prediction confirms. So

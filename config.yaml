@@ -4,7 +4,11 @@
 provider:
   # "ollama" (local HTTP) or "claude_cli" (the Claude Code CLI in non-interactive mode).
   # No hosted AI APIs are used anywhere in this project.
-  name: ollama
+  #
+  # Model ids are pinned to dated snapshots, never to moving aliases like "sonnet" or
+  # "claude-sonnet-4-5": an alias resolves to whatever is current, so a reviewer running
+  # this later would silently get a different model and different numbers.
+  name: claude_cli
   ollama:
     base_url: http://localhost:11434
     model: gemma4:12b
@@ -12,11 +16,13 @@ provider:
     seed: 42
   claude_cli:
     binary: claude
-    model: sonnet
+    model: claude-sonnet-4-5-20250929
 
-# The measurement instrument must not share a model with the system it measures.
+# The measurement instrument must not share a model with the system it measures - a model
+# grading its own output is not a measurement. The judge therefore runs on the provider
+# the interviewer is not using.
 judge:
-  provider: claude_cli
+  provider: ollama
 
 interview:
   total_seconds: 1500          # 25 minutes
