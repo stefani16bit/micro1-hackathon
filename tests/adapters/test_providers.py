@@ -134,3 +134,37 @@ class TestClaudeCliCommand:
         assert command[command.index("--output-format") + 1] == "json"
         assert command[command.index("--disallowed-tools") + 1] == "*"
         assert command[command.index("--model") + 1] == "sonnet"
+
+
+class TestSchemaReachesTheModel:
+    """Ollama enforces the schema server-side; the CLI adapter has nothing enforcing it,
+    so the schema must reach the model as text or the call fails on a missing key with no
+    hint as to why."""
+
+    def test_the_cli_adapter_puts_the_schema_in_the_system_prompt(self):
+        provider = ClaudeCliProvider(binary="claude", model="claude-sonnet-4-5-20250929")
+        system = provider.system_prompt(request())
+        assert "question" in system
+        assert "required" in system
+
+    def test_the_cli_command_carries_that_system_prompt(self):
+        provider = ClaudeCliProvider(binary="claude", model="claude-sonnet-4-5-20250929")
+        command = provider.build_command(request())
+        appended = command[command.index("--append-system-prompt") + 1]
+        assert "JSON Schema" in appended
+
+
+class TestTopLevelArrays:
+    def test_an_array_is_reported_rather_than_silently_unwrapped(self):
+        """Reaching into an array and returning its first element parses cleanly and is
+        the wrong answer - the failure mode worth being loud about."""
+        with pytest.raises(MalformedResponse, match="array"):
+            parse_json_payload('[{"question": "Why?"}, {"question": "How?"}]')
+
+    def test_an_object_containing_an_array_still_parses(self):
+        payload = parse_json_payload('{"matches": [{"slot_id": "frontend"}]}')
+        assert payload["matches"][0]["slot_id"] == "frontend"
+
+    def test_an_array_nested_in_prose_is_still_reported(self):
+        with pytest.raises(MalformedResponse, match="array"):
+            parse_json_payload('Here you go: [1, 2, 3]')

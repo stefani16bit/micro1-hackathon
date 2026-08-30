@@ -129,6 +129,7 @@ def main(argv: Sequence[str]) -> int:
     case_dir = root / argv[1]
     config = yaml.safe_load((root / "config.yaml").read_text(encoding="utf-8"))
 
+    from solution.adapters.cv_redaction import file_digest
     from solution.adapters.providers import build_provider
     from solution.adapters.resume_pdf import read_resume_text
     from solution.adapters.slot_plan import load_slot_plan
@@ -141,11 +142,21 @@ def main(argv: Sequence[str]) -> int:
     verified, discarded = verify(matches, resume_text, plan)
 
     target = case_dir / "resume-evidence.yaml"
+    document = {
+        # Recorded so the preflight can tell whether this file still describes the CV and
+        # the slot plan actually in use. Swapping the CV without re-running this used to
+        # fail silently rather than loudly.
+        "provenance": {
+            "cv_source_sha256": file_digest(case_dir / "cv-original.pdf"),
+            "slot_plan_fingerprint": plan.fingerprint,
+        },
+        "evidence": verified,
+    }
     target.write_text(
         "# Frozen before turn 1. has_experience decides behavioural vs situational\n"
         "# phrasing, so it must not move once the interview starts.\n"
         "# Every quote below was checked against the CV text in code.\n"
-        + yaml.safe_dump({"evidence": verified}, sort_keys=False, allow_unicode=True),
+        + yaml.safe_dump(document, sort_keys=False, allow_unicode=True),
         encoding="utf-8",
     )
 

@@ -111,10 +111,17 @@ def extract(role_text: str, provider: LlmProvider) -> tuple[Mapping[str, Any], .
 def render_draft(
     role_dir: Path, role_name: str, source: str, frozen_at: str, plan: DraftPlan
 ) -> Path:
+    from solution.adapters.cv_redaction import file_digest
+
     document = {
         "role": role_name,
         "source": source,
         "frozen_at": frozen_at,
+        # The digest of the job description this plan was extracted from. The preflight
+        # compares it against the current role.txt and refuses to run an interview when
+        # they disagree - a plan frozen against a different role would silently change the
+        # competencies coverage is measured over.
+        "provenance": {"role_sha256": file_digest(role_dir / "role.txt")},
         "slots": [dict(slot) for slot in plan.kept],
         "excluded": [dict(item) for item in plan.excluded],
     }

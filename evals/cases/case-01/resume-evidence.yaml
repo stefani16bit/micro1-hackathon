@@ -1,21 +1,25 @@
 # Frozen before turn 1. has_experience decides behavioural vs situational
 # phrasing, so it must not move once the interview starts.
 # Every quote below was checked against the CV text in code.
+provenance:
+  cv_source_sha256: ec76de419b54a0573b4fcc216d5081f9323040e8cdecf3351b0397cea0a4643b
+  slot_plan_fingerprint: 211aa132eaa8d339828e5a9bbe2237b82c99123d53439e5bc20dd1f581f2dc18
 evidence:
 - slot_id: frontend
-  has_experience: false
-  evidence_quote: ''
+  has_experience: true
+  evidence_quote: Built internal web applications in React.js and TypeScript, delivering
+    responsive dashboards and operational portals used daily by back-office and operations
+    teams to track requests, exceptions and process status.
 - slot_id: backend
   has_experience: true
   evidence_quote: Developed and maintained payment microservices processing thousands
     of daily transactions across credit card, boleto and Pix, for one of Brazil's
-    largest cosmetics companies and its nationwide franchise network. Built in TypeScript
-    and Node.js applying Clean Architecture, Domain-Driven Design and TDD.
+    largest cosmetics companies and its nationwide franchise network.
 - slot_id: api_contract
   has_experience: true
-  evidence_quote: provisioned and configured API Gateways with Cognito authorizers,
-    HTTP/consumer Lambdas over SNS/SQS, IAM roles and resource policies, base path
-    mappings, rate limiting, timeouts and stage configuration.
+  evidence_quote: Developed back-end services in PythoN, exposing REST and GraphQL
+    APIs consumed by the front-end, with authentication, role-based access control
+    and input validation.
 - slot_id: data_layer
   has_experience: true
   evidence_quote: Managed database schema evolution through Knex migrations, and wrote

@@ -18,6 +18,13 @@ source: >-
   https://jobs.micro1.ai/post/e4af7669-a52f-4f24-95f4-621259887aef
   (micro1 public job board, posted 2026-08-14, retrieved 2026-08-29)
 frozen_at: '2026-08-29'
+# Digest of the role.txt this plan was extracted from. The preflight compares it
+# against the current file and refuses to run when they disagree: a plan frozen
+# against a different job description would silently change the competencies that
+# coverage is measured over. Adding this record does not alter the plan - the slots
+# block below is byte-identical to the one frozen in commit c8fc64e.
+provenance:
+  role_sha256: 0cd28bd0962f02d117b03cd3dc14c7043eccec69c035980f2e864209c91bccff
 slots:
   - id: frontend
     name: frontend development

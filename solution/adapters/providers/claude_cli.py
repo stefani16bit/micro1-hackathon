@@ -25,6 +25,21 @@ class ClaudeCliProvider(LlmProvider):
         self.model = model
         self.timeout_seconds = timeout_seconds
 
+    def system_prompt(self, request: LlmRequest) -> str:
+        """The call's own system prompt, plus the schema it is expected to satisfy.
+
+        The Ollama adapter hands the schema to the server, which enforces it. Nothing
+        enforces it here, so the schema has to reach the model as text - without this the
+        model answers in a shape of its own choosing and the call fails on a missing key
+        with no hint as to why.
+        """
+        return (
+            f"{request.system}\n\n"
+            "Reply with a single JSON object and nothing else - no prose, no code fence. "
+            "It must satisfy this JSON Schema:\n"
+            f"{json.dumps(request.schema, indent=2)}"
+        )
+
     def build_command(self, request: LlmRequest) -> list[str]:
         return [
             self.binary,
@@ -36,7 +51,7 @@ class ClaudeCliProvider(LlmProvider):
             "--disallowed-tools",
             "*",
             "--append-system-prompt",
-            request.system,
+            self.system_prompt(request),
             request.prompt,
         ]
 

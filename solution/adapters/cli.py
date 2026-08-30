@@ -27,6 +27,8 @@ from solution.adapters.resume_pdf import read_resume_text
 from solution.adapters.session_store import SessionStore
 from solution.adapters.slot_plan import load_slot_plan
 from solution.application.interviewers.single_prompt import SinglePromptInterviewer
+from solution.application.ingest_resume import main as refresh_evidence
+from solution.application.preflight import prepare, render
 from solution.application.runner import Interviewer, run_interview
 from solution.domain.models import TimeBudget
 
@@ -45,6 +47,18 @@ def current_commit() -> str:
         return result.stdout.strip() or "unknown"
     except (OSError, subprocess.SubprocessError):
         return "unknown"
+
+
+def measured_runs_exist() -> bool:
+    """Has any iteration been measured yet? Decides whether inputs may still be rebuilt."""
+    results = ROOT / "evals" / "results"
+    if not results.exists():
+        return False
+    return any(
+        any(directory.glob("session-*.jsonl"))
+        for directory in results.glob("iteration-*")
+        if directory.is_dir()
+    )
 
 
 def build_interviewer(
@@ -102,17 +116,34 @@ def main(argv: Sequence[str]) -> int:
 
     role_dir = ROOT / config["role"]
     case_dir = ROOT / config["case"]
+
+    # Nothing starts until the derived artifacts are in step with their inputs.
+    report = prepare(
+        role_dir=role_dir, case_dir=case_dir, require_frozen_opening=not args.pilot
+    )
+
+    # Résumé evidence is regenerated automatically only while no measured run exists.
+    # Before the first measurement, swapping the CV simply means a different case and
+    # rebuilding is the obvious thing to do. Afterwards the evidence is an input held
+    # constant across the eleven iterations, so changing it would split the ladder into
+    # two halves run against different inputs - and that is a decision for a person.
+    if report.needs_evidence_refresh and not measured_runs_exist():
+        print(render(report))
+        print("\n  no measured run exists yet - regenerating the résumé evidence\n")
+        refresh_evidence(["ingest_resume", str(case_dir.relative_to(ROOT))])
+        report = prepare(
+            role_dir=role_dir, case_dir=case_dir, require_frozen_opening=not args.pilot
+        )
+
+    if report.derived or report.problems:
+        print(render(report))
+    if not report.ok:
+        return 2
+
     plan = load_slot_plan(role_dir / "slots.yaml")
     role_text = (role_dir / "role.txt").read_text(encoding="utf-8")
     resume_text = read_resume_text(case_dir / "cv.pdf")
-
     opening_blocks = load_fenced_blocks(case_dir / "opening-answer.md")
-    if not opening_blocks and not args.pilot:
-        raise SystemExit(
-            f"{case_dir / 'opening-answer.md'} has no fenced block holding the frozen "
-            "opening answer; it must be frozen before a measured run. Run --pilot first "
-            "to produce it in the candidate's own words."
-        )
 
     if args.smoke:
         run_kind, bucket = "smoke", "smoke"

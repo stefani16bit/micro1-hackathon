@@ -53,8 +53,17 @@ class LlmResponse:
     duration_ms: int
 
 
-def _extract_object(text: str) -> str | None:
-    """Find the first balanced JSON object, ignoring braces that appear inside strings."""
+def _extract_value(text: str) -> str | None:
+    """Find the first balanced JSON object *or array*, ignoring brackets inside strings.
+
+    Arrays are matched as well as objects on purpose. Scanning for `{` alone would reach
+    inside a top-level array and return its first element - which parses cleanly and is
+    the wrong answer, the worst kind of failure. Taking the outermost value instead lets
+    the caller reject the wrong shape with a message that says what it got.
+
+    Bracket types are counted together rather than matched pairwise; genuinely mismatched
+    brackets are left for json.loads to report, which it does better than this loop could.
+    """
     depth = 0
     start: int | None = None
     in_string = False
@@ -71,11 +80,11 @@ def _extract_object(text: str) -> str | None:
             continue
         if character == '"':
             in_string = True
-        elif character == "{":
+        elif character in "{[":
             if depth == 0:
                 start = index
             depth += 1
-        elif character == "}" and depth:
+        elif character in "}]" and depth:
             depth -= 1
             if depth == 0 and start is not None:
                 return text[start : index + 1]
@@ -88,15 +97,20 @@ def parse_json_payload(raw: str) -> Mapping[str, Any]:
     Models wrap objects in prose and fenced blocks no matter how firmly the prompt asks
     them not to, so this tolerates the wrapping rather than pretending it never happens.
     """
-    candidate = _extract_object(raw)
+    candidate = _extract_value(raw)
     if candidate is None:
-        raise MalformedResponse(f"no JSON object found in response: {raw[:200]!r}")
+        raise MalformedResponse(f"no JSON found in response: {raw[:200]!r}")
     try:
         parsed = json.loads(candidate)
     except json.JSONDecodeError as error:
         raise MalformedResponse(f"invalid JSON: {error}") from error
+    if isinstance(parsed, list):
+        raise MalformedResponse(
+            "expected a JSON object at the top level but got an array; the schema's "
+            "required keys have to be on an object wrapping it"
+        )
     if not isinstance(parsed, dict):
-        raise MalformedResponse("expected a JSON object at the top level")
+        raise MalformedResponse(f"expected a JSON object at the top level, got {type(parsed).__name__}")
     return parsed
 
 

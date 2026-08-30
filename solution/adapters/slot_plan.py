@@ -8,6 +8,8 @@ comparison. Validation here is strict for the same reason.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
@@ -28,11 +30,36 @@ class SlotPlan:
     frozen_at: str
     slots: tuple[Slot, ...]
     excluded: tuple[Mapping[str, Any], ...] = field(default_factory=tuple)
+    provenance: Mapping[str, Any] = field(default_factory=dict)
 
     @property
     def denominator(self) -> int:
         """Coverage is measured over exactly these slots."""
         return len(self.slots)
+
+    @property
+    def fingerprint(self) -> str:
+        """Identity of the plan itself, not of the file holding it.
+
+        Computed over the slots only, so editing a comment or adding provenance does not
+        register as a changed plan while renaming a slot or touching a keyword does. It is
+        what downstream artifacts record to prove which plan they were resolved against.
+        """
+        material = json.dumps(
+            [
+                {
+                    "id": slot.id,
+                    "name": slot.name,
+                    "kind": slot.kind.value,
+                    "keywords": list(slot.keywords),
+                    "rank": slot.rank,
+                }
+                for slot in self.slots
+            ],
+            sort_keys=True,
+            ensure_ascii=False,
+        )
+        return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
     @property
     def keywords(self) -> frozenset[str]:
@@ -100,4 +127,5 @@ def load_slot_plan(path: Path | str) -> SlotPlan:
         frozen_at=str(document.get("frozen_at", "")),
         slots=tuple(sorted(slots, key=lambda s: s.rank)),
         excluded=tuple(document.get("excluded") or ()),
+        provenance=dict(document.get("provenance") or {}),
     )
