@@ -36,6 +36,13 @@ class CandidateIO(ABC):
     def collect(self, deadline_seconds: int) -> Answer:
         """Collect one answer, ending at the deadline whether or not it is finished."""
 
+    def note_progress(self, elapsed_seconds: float, total_seconds: float) -> None:
+        """Told where the interview stands, before each answer is collected.
+
+        Presentation only - nothing here may influence the interview. A console
+        implementation uses it to show a countdown; the scripted and canned ones ignore it.
+        """
+
 
 class Interviewer(ABC):
     """What differs between iterations. Everything else in this module does not."""
@@ -93,6 +100,7 @@ def run_interview(
         )
         transcript = transcript.with_question(utterance, generation_seconds)
 
+        io.note_progress(transcript.elapsed_seconds, budget.total_seconds)
         answer = io.collect(budget.answer_deadline_seconds)
         store.append(
             "answer_received",

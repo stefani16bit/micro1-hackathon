@@ -3,7 +3,13 @@ name = "structured-interviewer"
 version = "0.1.0"
 description = "A technical interviewer whose topic coverage is guaranteed by code, not by prompting."
 requires-python = ">=3.12"
-dependencies = ["pyyaml>=6.0", "pymupdf>=1.24", "httpx>=0.27"]
+dependencies = [
+  "pyyaml>=6.0",
+  "pymupdf>=1.24",
+  "httpx>=0.27",
+  "prompt_toolkit>=3.0",
+  "rich>=13.0",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]

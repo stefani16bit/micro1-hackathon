@@ -8,45 +8,122 @@ no longer hold.
 
 from __future__ import annotations
 
+import sys
 import time
+
+from prompt_toolkit import prompt as pt_prompt
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.styles import Style
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 
 from solution.adapters.session_store import SessionStore
 from solution.application.runner import CandidateIO
 from solution.domain.transcript import Answer
 
 _RULE = "-" * 72
+_WIDTH = 88
+
+# The candidate types in green; the interviewer speaks in yellow.
+_ANSWER_STYLE = Style.from_dict(
+    {
+        "": "ansigreen",  # what the candidate types
+        "bottom-toolbar": "noreverse ansiblack bg:ansiwhite",
+    }
+)
+
+
+def _clock(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    return f"{seconds // 60}:{seconds % 60:02d}"
 
 
 class ConsoleIO(CandidateIO):
-    """Reads an answer using the terminal's own line editing.
+    """Reads an answer with full line editing and a live countdown.
 
-    The deadline is a target, not a cut. A blocking read cannot be interrupted cleanly,
-    and every workaround costs the candidate arrow keys, Home/End and everything else the
-    console gives for free - a bad trade for someone typing eleven interviews. Capturing
-    half-written text was never required either: the rule is that an answer not submitted
-    in time means the interview moves on, not that a fragment gets recorded.
+    The countdown runs in prompt_toolkit's bottom toolbar, which repaints on its own
+    timer without disturbing the line being typed - the reason a plain `input()` could
+    not show one.
 
-    So the control becomes detection rather than prevention. The answer is accepted
-    whenever it is submitted, the real time is recorded, and going over is flagged. If
-    answers lengthen across iterations - which would shorten interviews and depress
-    coverage for reasons that have nothing to do with the interviewer - that shows up as
-    a number instead of hiding inside one.
+    The deadline stays a target rather than a cut, as recorded in PREREGISTRATION.md: the
+    answer is accepted whenever it is submitted, the real time is recorded, and going over
+    is flagged. If answers lengthen across iterations - shortening interviews and
+    depressing coverage for a reason that is not the interviewer - that surfaces as a
+    number rather than hiding inside one.
     """
 
+    def __init__(self) -> None:
+        self._console = Console(width=_WIDTH)
+        self._elapsed = 0.0
+        self._total = 0.0
+
+    def note_progress(self, elapsed_seconds: float, total_seconds: float) -> None:
+        self._elapsed = elapsed_seconds
+        self._total = total_seconds
+
     def present(self, text: str) -> None:
-        print(f"\n{_RULE}\nINTERVIEWER\n{_RULE}\n{text}\n")
+        # markup=False: a question may legitimately contain square brackets, and rich
+        # would otherwise read them as styling tags and swallow them.
+        self._console.print()
+        self._console.print(
+            Panel(
+                Text(text, style="yellow"),
+                title="[bold yellow]INTERVIEWER[/bold yellow]",
+                border_style="yellow",
+                padding=(1, 2),
+            )
+        )
+
+    def _toolbar(self, started: float, deadline_seconds: int):
+        def render() -> HTML:
+            spent = time.perf_counter() - started
+            answer_left = deadline_seconds - spent
+            if answer_left > 45:
+                colour = "ansigreen"
+            elif answer_left > 15:
+                colour = "ansiyellow"
+            else:
+                colour = "ansired"
+            label = _clock(answer_left) if answer_left >= 0 else f"-{_clock(-answer_left)}"
+            parts = [
+                f' this answer <style fg="{colour}"><b>{label}</b></style>',
+                f"target {_clock(deadline_seconds)}",
+            ]
+            if self._total:
+                parts.append(f"interview {_clock(self._total - self._elapsed - spent)} left")
+            parts.append("Enter submits")
+            return HTML("   |   ".join(parts) + " ")
+
+        return render
 
     def collect(self, deadline_seconds: int) -> Answer:
-        print(f"YOU  (target {deadline_seconds}s - Enter submits)")
         started = time.perf_counter()
+        if not sys.stdin.isatty():
+            # No terminal to draw a toolbar on. Degrade to a plain read rather than crash.
+            text = sys.stdin.readline().rstrip("\n")
+            elapsed = time.perf_counter() - started
+            return Answer(
+                text=text.strip(),
+                seconds_used=elapsed,
+                over_deadline=elapsed > deadline_seconds,
+            )
         try:
-            text = input("> ")
+            text = pt_prompt(
+                "> ",
+                style=_ANSWER_STYLE,
+                bottom_toolbar=self._toolbar(started, deadline_seconds),
+                refresh_interval=0.5,
+            )
         except EOFError:
             text = ""
         elapsed = time.perf_counter() - started
         over_deadline = elapsed > deadline_seconds
         if over_deadline:
-            print(f"[time]  {elapsed:.0f}s, over the {deadline_seconds}s target - recorded")
+            target = _clock(deadline_seconds)
+            self._console.print(
+                f"[dim]{_clock(elapsed)} - over the {target} target, recorded[/dim]"
+            )
         return Answer(text=text.strip(), seconds_used=elapsed, over_deadline=over_deadline)
 
 
@@ -69,6 +146,9 @@ class FrozenOpeningIO(CandidateIO):
     def present(self, text: str) -> None:
         self._inner.present(text)
 
+    def note_progress(self, elapsed_seconds: float, total_seconds: float) -> None:
+        self._inner.note_progress(elapsed_seconds, total_seconds)
+
     def collect(self, deadline_seconds: int) -> Answer:
         if self._served:
             return self._inner.collect(deadline_seconds)
@@ -76,7 +156,15 @@ class FrozenOpeningIO(CandidateIO):
         self._served = True
         if self._store is not None:
             self._store.append("opening_answer_replayed", characters=len(self._opening_text))
-        print(f"YOU  (frozen opening answer, replayed verbatim)\n{self._opening_text}\n")
+        console = Console(width=_WIDTH)
+        console.print(
+            Panel(
+                Text(self._opening_text, style="green"),
+                title="[bold green]YOU[/bold green]  [dim]frozen opening, replayed verbatim[/dim]",
+                border_style="green",
+                padding=(1, 2),
+            )
+        )
         return Answer(
             text=self._opening_text,
             seconds_used=self._opening_seconds,
