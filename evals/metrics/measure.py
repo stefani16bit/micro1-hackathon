@@ -47,7 +47,10 @@ def measure_session(
 ) -> dict:
     events = SessionStore(session_path).events()
     metadata = next((e.data for e in events if e.type == "run_metadata"), {})
-    is_smoke = any(e.type == "smoke_run" for e in events)
+    run_kind = metadata.get("run_kind") or next(
+        (e.type.removesuffix("_run") for e in events if e.type in ("smoke_run", "pilot_run")),
+        "measurement",
+    )
 
     lexicon = build_lexicon(plan.keywords)
     resume_terms = extract_terms(resume_text, lexicon)
@@ -112,7 +115,7 @@ def measure_session(
 
     return {
         "session": session_path.name,
-        "is_smoke_run": is_smoke,
+        "run_kind": run_kind,
         "metadata": metadata,
         "denominator": plan.denominator,
         "coverage": {
@@ -120,8 +123,12 @@ def measure_session(
             "missed_slots": sorted({s.id for s in plan.slots} - covered),
             "value": round(len(covered) / plan.denominator, 3) if plan.denominator else 0.0,
         },
-        "carry_over_rate": round(sum(m.carry_over for m in measurements) / asked, 3) if asked else 0.0,
-        "grounding_rate": round(sum(m.grounded for m in measurements) / asked, 3) if asked else 0.0,
+        "carry_over_rate": (
+            round(sum(m.carry_over for m in measurements) / asked, 3) if asked else 0.0
+        ),
+        "grounding_rate": (
+            round(sum(m.grounded for m in measurements) / asked, 3) if asked else 0.0
+        ),
         "questions_measured": asked,
         "resolved_by": by_layer,
         "questions": [asdict(m) for m in measurements],
@@ -152,8 +159,12 @@ def render(result: dict) -> str:
         f"   judge {layers['judge'] / total:.0%}"
         f"   unresolved {layers['unresolved'] / total:.0%}",
     ]
-    if result["is_smoke_run"]:
-        lines += ["", "  ** SMOKE RUN - canned candidate, not a measurement **"]
+    warning = {
+        "smoke": "** SMOKE RUN - canned candidate, not a measurement **",
+        "pilot": "** PILOT RUN - unrehearsed respondent, opening typed live; not a measurement **",
+    }.get(result["run_kind"])
+    if warning:
+        lines += ["", f"  {warning}"]
     return "\n".join(lines) + "\n"
 
 

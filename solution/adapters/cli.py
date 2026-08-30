@@ -78,7 +78,19 @@ def main(argv: Sequence[str]) -> int:
         metavar="SECONDS",
         help="verify the pipeline with a canned candidate over a short budget; never a measurement",
     )
+    parser.add_argument(
+        "--pilot",
+        action="store_true",
+        help=(
+            "pilot run: the opening answer is typed live rather than replayed, and the "
+            "record is written to evals/results/pilot/. Never a measurement - its purpose "
+            "is to produce the frozen opening answer and the response brief"
+        ),
+    )
     args = parser.parse_args(argv[1:])
+
+    if args.pilot and args.smoke:
+        raise SystemExit("--pilot and --smoke are mutually exclusive")
 
     config = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
     settings = config["interview"]
@@ -95,19 +107,27 @@ def main(argv: Sequence[str]) -> int:
     resume_text = read_resume_text(case_dir / "cv.pdf")
 
     opening_blocks = load_fenced_blocks(case_dir / "opening-answer.md")
-    if not opening_blocks:
+    if not opening_blocks and not args.pilot:
         raise SystemExit(
             f"{case_dir / 'opening-answer.md'} has no fenced block holding the frozen "
-            "opening answer; it must be frozen before a run"
+            "opening answer; it must be frozen before a measured run. Run --pilot first "
+            "to produce it in the candidate's own words."
         )
+
+    if args.smoke:
+        run_kind, bucket = "smoke", "smoke"
+    elif args.pilot:
+        run_kind, bucket = "pilot", "pilot"
+    else:
+        run_kind, bucket = "measurement", f"iteration-{args.iteration:02d}"
 
     provider = build_provider(config, args.provider)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    results_dir = ROOT / "evals" / "results" / ("smoke" if args.smoke else f"iteration-{args.iteration:02d}")
-    store = SessionStore(results_dir / f"session-{stamp}.jsonl")
+    store = SessionStore(ROOT / "evals" / "results" / bucket / f"session-{stamp}.jsonl")
 
     store.append(
         "run_metadata",
+        run_kind=run_kind,
         iteration=args.iteration,
         provider=provider.name,
         model=provider.model,
@@ -121,17 +141,26 @@ def main(argv: Sequence[str]) -> int:
     )
 
     interviewer = build_interviewer(args.iteration, provider, role_text, resume_text, budget)
-    io = FrozenOpeningIO(
-        inner=SmokeIO() if args.smoke else ConsoleIO(),
-        opening_text=opening_blocks[0],
-        opening_seconds=float(settings["opening_answer_seconds"]),
-        store=store,
-    )
-    if args.smoke:
-        store.append("smoke_run", note="canned candidate; not a measurement")
 
-    print(f"\n  iteration {args.iteration}  |  {provider.name}:{provider.model}")
+    if args.pilot:
+        # The opening is typed live so the frozen artifact ends up in the candidate's own
+        # words rather than in a draft written for them.
+        io = ConsoleIO()
+        store.append("pilot_run", note="opening typed live; not a measurement")
+    else:
+        io = FrozenOpeningIO(
+            inner=SmokeIO() if args.smoke else ConsoleIO(),
+            opening_text=opening_blocks[0],
+            opening_seconds=float(settings["opening_answer_seconds"]),
+            store=store,
+        )
+        if args.smoke:
+            store.append("smoke_run", note="canned candidate; not a measurement")
+
+    print(f"\n  {run_kind}  |  iteration {args.iteration}  |  {provider.name}:{provider.model}")
     print(f"  {budget.total_seconds // 60} minutes, {budget.answer_deadline_seconds}s per answer")
+    if args.pilot:
+        print("  the opening answer is typed live and frozen from what you write")
     print(f"  recording to {store.path.relative_to(ROOT)}\n")
 
     try:
