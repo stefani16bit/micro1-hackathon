@@ -18,11 +18,20 @@ provider:
     binary: claude
     model: claude-sonnet-4-5-20250929
 
-# The measurement instrument must not share a model with the system it measures - a model
-# grading its own output is not a measurement. The judge therefore runs on the provider
-# the interviewer is not using.
+# The judge runs on the same model as the interviewer, deliberately. Self-preference bias
+# is a phenomenon of quality judgement; this judge performs blind classification - it sees
+# one question and the competency list, with no transcript, no iteration number and nothing
+# identifying the system that produced it, so it cannot know whether it is labelling its
+# own output. Distorting the comparison would require the bias to act differently at the
+# two ends of the ladder, and blindness leaves no mechanism for that.
+#
+# The gain is real: a stronger judge resolves the hard cases better, and the hard cases are
+# exactly what reaches it - questions spanning three or four slots that the rule escalates.
+#
+# What this removes is the cross-model check, so D11 (the result is about the architecture,
+# not about one model) is deferred rather than demonstrated. See PREREGISTRATION.md 3d.
 judge:
-  provider: ollama
+  provider: claude_cli
 
 interview:
   total_seconds: 1500          # 25 minutes

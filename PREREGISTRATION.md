@@ -41,8 +41,9 @@ coverage = |{ slots targeted by at least one substantive question }| / 6
 
 A question "targets" a slot when the measurement cascade says so: a literal keyword match against
 `slots.yaml` first, and for questions no rule resolves, a blind LLM judge — iteration id stripped,
-transcripts shuffled, temperature 0, running on a **different provider** than the interviewer. The
-share resolved by each layer is reported with every result.
+transcripts shuffled, temperature 0. The share resolved by each layer is reported with every
+result. (The judge shares the interviewer's model — see §3d for why that is acceptable for a blind
+classification task, and what it costs.)
 
 **Carry-over rate (guardrail).** Fully deterministic, no model involved:
 
@@ -92,7 +93,44 @@ grounding, and that is the failure mode the guardrail exists to catch.
 
 ---
 
-## 3c. Amendment, 2026-08-30 — the ladder moves to Claude Sonnet 4.5
+## 3d. Amendment, 2026-08-30 — one model everywhere, for now
+
+Supersedes the provider split in §3c. Made **before any measured run**.
+
+**Everything runs on `claude-sonnet-4-5-20250929`**: the interviewer across all eleven
+iterations, and the measurement judge. There is no second model anywhere in the pipeline.
+
+**On the judge sharing the interviewer's model.** The earlier rule — that the judge must run
+elsewhere — was a reasonable default applied without examining whether it earned its cost here. It
+does not, for three reasons:
+
+1. The judge performs **classification**, not quality evaluation. It answers *which competency is
+   this question about*, never *is this question good*. Self-preference bias is a phenomenon of
+   preference and quality judgement; a blind classification task gives it almost nowhere to act.
+2. The judge is **blind by construction**: one question plus the competency list, with no
+   transcript, no iteration number, and nothing identifying the system. It cannot know whether it
+   is labelling its own output.
+3. The **same judge labels both ends of the ladder**. To distort the comparison the bias would have
+   to act differently at iteration 0 than at iteration 10, and blindness leaves no mechanism for
+   that.
+
+Against that, the gain is concrete: a stronger judge resolves the hard cases better, and the hard
+cases are precisely what reaches it — questions spanning three or four slots that the rule layer
+escalates rather than guesses at.
+
+**What this does cost, and it is not the bias:**
+
+- **The cross-model check is gone**, so **D11 — that the result is about the architecture rather
+  than about one model — is deferred, not demonstrated.** Until a second model is run, no claim of
+  model independence appears in the README or anywhere else. The provider abstraction remains in
+  the code and the check can be added later; it has simply not been measured.
+- **The hand-labelled agreement sample is now the judge's only external check.** It was a
+  confirmation before; it is load-bearing now. It is not optional, and the agreement rate is
+  reported with the results whatever it turns out to be.
+
+---
+
+## 3c. Amendment, 2026-08-30 — the ladder moves to Claude Sonnet 4.5 *(provider split superseded by §3d)*
 
 Supersedes §3b below. Made **before any measured run**, and recorded rather than quietly applied.
 
@@ -168,7 +206,11 @@ Stated now so it cannot be negotiated later:
 - Any metric being redefined after seeing a result.
 - Iterations being reported selectively. Every run goes into `evals/results/`, including the ones
   that made things worse.
-- The measurement cascade's blind judge sharing a provider with the interviewer being measured.
+- The judge ceasing to be blind — being shown the transcript, the iteration number, or anything
+  else identifying which system produced a question. Sharing the interviewer's model is allowed
+  (§3d); seeing whose output it is labelling is not.
+- The hand-labelled agreement sample not being produced, or being reported selectively. It is the
+  judge's only external check.
 
 ---
 

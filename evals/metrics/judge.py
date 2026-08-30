@@ -5,8 +5,11 @@ list of competencies, and nothing else. No transcript, no iteration number, no i
 of which system produced it, not even the neighbouring questions. There is nothing in the
 input it could use to favour one end of the ladder over the other.
 
-It also runs on a different provider than the interviewer being measured
-(`judge.provider` in config.yaml), so a model is never grading its own output.
+It runs on the same model as the interviewer (`judge.provider` in config.yaml), and the
+blindness above is why that is acceptable: this is classification, not quality judgement,
+and a judge that cannot tell whose output it is labelling has no way to prefer its own.
+The external check on it is the hand-labelled agreement sample, which is reported with
+every result. See PREREGISTRATION.md 3d.
 """
 
 from __future__ import annotations
