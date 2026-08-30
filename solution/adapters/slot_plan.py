@@ -57,13 +57,18 @@ def _build_slot(raw: Mapping[str, Any], index: int) -> Slot:
         raise SlotPlanError(f"{where} is missing required field {error}") from error
 
     if not keywords:
-        raise SlotPlanError(f"{where} ({slot_id}) declares no keywords; carry-over detection needs them")
+        raise SlotPlanError(
+            f"{where} ({slot_id}) declares no keywords; carry-over detection needs them"
+        )
 
     try:
         kind = SlotKind(kind_value)
     except ValueError as error:
         allowed = ", ".join(k.value for k in SlotKind)
-        raise SlotPlanError(f"{where} ({slot_id}) has unknown kind {kind_value!r}; expected one of {allowed}") from error
+        raise SlotPlanError(
+            f"{where} ({slot_id}) has unknown kind {kind_value!r}; "
+            f"expected one of {allowed}"
+        ) from error
 
     return Slot(id=slot_id, name=name, kind=kind, keywords=keywords, rank=rank)
 

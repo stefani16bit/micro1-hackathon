@@ -17,7 +17,9 @@ CLOUD = Slot(
 
 
 def ctx(**kw) -> GateContext:
-    base = dict(slot=CLOUD, lexicon=LEXICON, prior_answer_terms=frozenset(), expect_behavioural=True)
+    base = dict(
+        slot=CLOUD, lexicon=LEXICON, prior_answer_terms=frozenset(), expect_behavioural=True
+    )
     return GateContext(**{**base, **kw})
 
 

@@ -23,7 +23,9 @@ SCHEMA = {
 
 
 def request(prompt: str = "ask about cloud") -> LlmRequest:
-    return LlmRequest(call="generate_question", system="You interview.", prompt=prompt, schema=SCHEMA)
+    return LlmRequest(
+        call="generate_question", system="You interview.", prompt=prompt, schema=SCHEMA
+    )
 
 
 class ScriptedProvider(LlmProvider):

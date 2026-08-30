@@ -65,7 +65,9 @@ def load_base_lexicon(path: Path | None = None) -> frozenset[str]:
     )
 
 
-def build_lexicon(slot_keywords: Iterable[str], base: frozenset[str] | None = None) -> frozenset[str]:
+def build_lexicon(
+    slot_keywords: Iterable[str], base: frozenset[str] | None = None
+) -> frozenset[str]:
     """The working lexicon is the committed base list plus every keyword the frozen slot
     plan declares, so the role's own vocabulary is always recognised."""
     resolved = load_base_lexicon() if base is None else base
