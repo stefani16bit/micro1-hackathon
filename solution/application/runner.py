@@ -98,7 +98,7 @@ def run_interview(
             "answer_received",
             text=answer.text,
             seconds_used=round(answer.seconds_used, 2),
-            timed_out=answer.timed_out,
+            over_deadline=answer.over_deadline,
         )
         transcript = transcript.with_answer(answer)
 

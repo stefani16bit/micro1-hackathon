@@ -57,7 +57,7 @@ def main(argv: list[str]) -> int:
 
         elif event.type == "answer_received":
             seconds = event.data.get("seconds_used", 0)
-            flag = "  TIMED OUT" if event.data.get("timed_out") else ""
+            flag = "  OVER DEADLINE" if event.data.get("over_deadline") else ""
             print(f"\n  CANDIDATE  [{seconds}s]{flag}")
             print(wrap(event.data.get("text", "") or "(no answer)"))
 

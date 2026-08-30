@@ -39,7 +39,7 @@ class ScriptedIO(CandidateIO):
             return self._queue.pop(0)
         if self._default is not None:
             return self._default
-        return Answer(text="", seconds_used=0.0, timed_out=True)
+        return Answer(text="", seconds_used=0.0, over_deadline=True)
 
 
 def question(text: str = "Tell me about your backend work?") -> Utterance:
@@ -100,13 +100,13 @@ def test_always_offers_the_full_answer_deadline(tmp_path, store_factory):
 def test_a_timed_out_answer_does_not_end_the_interview(tmp_path, store_factory):
     outcome = run_interview(
         interviewer=ScriptedInterviewer(question("First?"), question("Second?")),
-        io=ScriptedIO(Answer("", 120.0, timed_out=True), Answer("Second answer.", 30.0)),
+        io=ScriptedIO(Answer("", 120.0, over_deadline=True), Answer("Second answer.", 30.0)),
         store=store_factory(tmp_path),
         budget=BUDGET,
         clock=lambda: 0.0,
     )
     assert len(outcome.transcript.questions) == 2
-    assert outcome.transcript.answers[0].timed_out is True
+    assert outcome.transcript.answers[0].over_deadline is True
 
 
 def test_persists_every_turn_as_it_happens(tmp_path, store_factory):

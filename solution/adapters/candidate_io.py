@@ -1,18 +1,13 @@
 """The candidate's side of an interview.
 
-`ConsoleIO` enforces the deadline on the keystroke loop rather than on a blocking read, so
-what the candidate has typed when time runs out *is* the answer. That matches how a timed
-interview actually behaves: you do not lose what you said because you were mid-sentence.
-
-`FrozenOpeningIO` wraps it to replay the frozen opening answer. That answer is the
-controlled stimulus of the whole experiment, so it is served from the file rather than
-retyped - a re-typed opening is a different opening, and the comparison across the
-eleven runs would no longer hold.
+`FrozenOpeningIO` replays the frozen opening answer. That answer is the controlled
+stimulus of the whole experiment, so it is served from the file rather than retyped - a
+re-typed opening is a different opening, and the comparison across the eleven runs would
+no longer hold.
 """
 
 from __future__ import annotations
 
-import sys
 import time
 
 from solution.adapters.session_store import SessionStore
@@ -23,67 +18,36 @@ _RULE = "-" * 72
 
 
 class ConsoleIO(CandidateIO):
-    def __init__(self, warn_at_seconds: int = 30) -> None:
-        self.warn_at_seconds = warn_at_seconds
+    """Reads an answer using the terminal's own line editing.
+
+    The deadline is a target, not a cut. A blocking read cannot be interrupted cleanly,
+    and every workaround costs the candidate arrow keys, Home/End and everything else the
+    console gives for free - a bad trade for someone typing eleven interviews. Capturing
+    half-written text was never required either: the rule is that an answer not submitted
+    in time means the interview moves on, not that a fragment gets recorded.
+
+    So the control becomes detection rather than prevention. The answer is accepted
+    whenever it is submitted, the real time is recorded, and going over is flagged. If
+    answers lengthen across iterations - which would shorten interviews and depress
+    coverage for reasons that have nothing to do with the interviewer - that shows up as
+    a number instead of hiding inside one.
+    """
 
     def present(self, text: str) -> None:
         print(f"\n{_RULE}\nINTERVIEWER\n{_RULE}\n{text}\n")
 
     def collect(self, deadline_seconds: int) -> Answer:
-        print(f"YOU  ({deadline_seconds}s, Enter to submit)")
-        print("> ", end="", flush=True)
+        print(f"YOU  (target {deadline_seconds}s - Enter submits)")
         started = time.perf_counter()
-        text, timed_out = self._read_until(started + deadline_seconds)
-        elapsed = min(time.perf_counter() - started, float(deadline_seconds))
-        if timed_out:
-            print("\n[time]  deadline reached - moving to the next question")
-        return Answer(text=text.strip(), seconds_used=elapsed, timed_out=timed_out)
-
-    def _read_until(self, deadline: float) -> tuple[str, bool]:
         try:
-            import msvcrt
-        except ImportError:
-            return self._read_until_posix(deadline)
-
-        buffer: list[str] = []
-        warned = False
-        while True:
-            if time.perf_counter() >= deadline:
-                return "".join(buffer), True
-
-            remaining = deadline - time.perf_counter()
-            if not warned and remaining <= self.warn_at_seconds:
-                warned = True
-                print(f"\n[{int(remaining)}s left]\n> {''.join(buffer)}", end="", flush=True)
-
-            if not msvcrt.kbhit():
-                time.sleep(0.02)
-                continue
-
-            character = msvcrt.getwch()
-            if character in ("\r", "\n"):
-                print()
-                return "".join(buffer), False
-            if character == "\x03":  # Ctrl-C
-                raise KeyboardInterrupt
-            if character == "\x08":  # backspace
-                if buffer:
-                    buffer.pop()
-                    print("\b \b", end="", flush=True)
-                continue
-            if character.isprintable():
-                buffer.append(character)
-                print(character, end="", flush=True)
-
-    def _read_until_posix(self, deadline: float) -> tuple[str, bool]:
-        """Line-based fallback. Loses partial text at the deadline; Windows does not."""
-        import select
-
-        remaining = max(0.0, deadline - time.perf_counter())
-        ready, _, _ = select.select([sys.stdin], [], [], remaining)
-        if not ready:
-            return "", True
-        return sys.stdin.readline().rstrip("\n"), False
+            text = input("> ")
+        except EOFError:
+            text = ""
+        elapsed = time.perf_counter() - started
+        over_deadline = elapsed > deadline_seconds
+        if over_deadline:
+            print(f"[time]  {elapsed:.0f}s, over the {deadline_seconds}s target - recorded")
+        return Answer(text=text.strip(), seconds_used=elapsed, over_deadline=over_deadline)
 
 
 class FrozenOpeningIO(CandidateIO):
@@ -116,7 +80,7 @@ class FrozenOpeningIO(CandidateIO):
         return Answer(
             text=self._opening_text,
             seconds_used=self._opening_seconds,
-            timed_out=False,
+            over_deadline=False,
         )
 
 
@@ -148,4 +112,4 @@ class SmokeIO(CandidateIO):
     def collect(self, deadline_seconds: int) -> Answer:
         answer = self.ANSWERS[(len(self.questions) - 1) % len(self.ANSWERS)]
         print(f"\nCANNED ANSWER ({self.seconds_per_answer:.0f}s of the budget)\n{answer}")
-        return Answer(text=answer, seconds_used=self.seconds_per_answer, timed_out=False)
+        return Answer(text=answer, seconds_used=self.seconds_per_answer, over_deadline=False)

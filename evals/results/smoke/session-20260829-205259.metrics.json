@@ -1,6 +1,6 @@
 {
   "session": "session-20260829-205259.jsonl",
-  "is_smoke_run": true,
+  "run_kind": "smoke",
   "metadata": {
     "iteration": 0,
     "provider": "ollama",
@@ -37,6 +37,8 @@
   "carry_over_rate": 1.0,
   "grounding_rate": 0.5,
   "questions_measured": 4,
+  "answer_seconds_mean": 60.0,
+  "answers_over_deadline": 0,
   "resolved_by": {
     "rule": 1,
     "judge": 0,

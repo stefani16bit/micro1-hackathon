@@ -58,11 +58,18 @@ def measure_session(
 
     measurements: list[QuestionMeasurement] = []
     prior_answer_terms: set[str] = set()
+    answer_seconds: list[float] = []
+    over_deadline = 0
+    answering_a_measured_question = False
     index = 0
 
     for event in events:
         if event.type == "answer_received":
             prior_answer_terms |= extract_terms(event.data.get("text", ""), lexicon)
+            if answering_a_measured_question:
+                answer_seconds.append(float(event.data.get("seconds_used", 0.0)))
+                over_deadline += bool(event.data.get("over_deadline"))
+                answering_a_measured_question = False
             continue
         if event.type != "question_asked":
             continue
@@ -71,6 +78,7 @@ def measure_session(
         if event.data.get("kind") == "opening":
             continue
 
+        answering_a_measured_question = True
         index += 1
         question = event.data.get("text", "")
         slot_id = label_by_rule(question, plan.slots)
@@ -130,6 +138,13 @@ def measure_session(
             round(sum(m.grounded for m in measurements) / asked, 3) if asked else 0.0
         ),
         "questions_measured": asked,
+        # Recorded because the answer deadline is a target rather than a hard cut. If
+        # answers lengthen across iterations, interviews shorten and coverage falls for a
+        # reason that is not the interviewer - this is where that would become visible.
+        "answer_seconds_mean": (
+            round(sum(answer_seconds) / len(answer_seconds), 1) if answer_seconds else 0.0
+        ),
+        "answers_over_deadline": over_deadline,
         "resolved_by": by_layer,
         "questions": [asdict(m) for m in measurements],
     }
@@ -155,6 +170,8 @@ def render(result: dict) -> str:
         f"  grounding rate   {result['grounding_rate']:.0%}",
         "",
         f"  questions        {result['questions_measured']}",
+        f"  answer time      {result['answer_seconds_mean']:.0f}s mean"
+        f"   ({result['answers_over_deadline']} over the target)",
         f"  labelled by      rule {layers['rule'] / total:.0%}"
         f"   judge {layers['judge'] / total:.0%}"
         f"   unresolved {layers['unresolved'] / total:.0%}",

@@ -28,7 +28,7 @@ class Utterance:
 class Answer:
     text: str
     seconds_used: float
-    timed_out: bool = False
+    over_deadline: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +38,7 @@ class TranscriptEntry:
     seconds: float
     kind: str = ""
     slot_id: str | None = None
-    timed_out: bool = False
+    over_deadline: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +60,7 @@ class Transcript:
             speaker=Speaker.CANDIDATE,
             text=answer.text,
             seconds=answer.seconds_used,
-            timed_out=answer.timed_out,
+            over_deadline=answer.over_deadline,
         )
         return replace(self, entries=self.entries + (entry,))
 
