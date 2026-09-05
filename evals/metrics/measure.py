@@ -1,15 +1,20 @@
 """Measure one session record.
 
-    python -m evals.metrics.measure evals/results/iteration-00/session-20260829-205109.jsonl
+    interview measure evals/results/iteration-00/session-<stamp>.jsonl
 
 Reads a session record and writes the metrics beside it as `<session>.metrics.json`,
-with per-question detail so every aggregate can be checked by hand. Nothing here reads
-the interviewer's own slot labels: see evals/metrics/labelling.py for why.
+with per-question detail so every aggregate can be checked by hand.
+
+**Nothing here reads the interviewer's own slot labels.** Iteration 0 has no slot concept,
+so measuring the later rungs by self-report would apply a different instrument to each end
+of the ladder. Every question is labelled from its text alone, by a judge blind to which
+system produced it.
 """
 
 from __future__ import annotations
 
 import json
+import statistics
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -17,8 +22,8 @@ from typing import Sequence
 
 import yaml
 
+from evals.metrics import allocation as allocation_metrics
 from evals.metrics.judge import judge_question
-from evals.metrics.labelling import label_by_rule
 from evals.metrics.rates import is_carry_over, is_grounded
 from solution.adapters.providers import build_provider
 from solution.adapters.resume_pdf import read_resume_text
@@ -34,9 +39,23 @@ class QuestionMeasurement:
     index: int
     text: str
     slot_id: str | None
-    resolved_by: str  # rule | judge | unresolved
+    resolved_by: str
     carry_over: bool
     grounded: bool
+
+
+def schedule_ceiling_of(events: Sequence, metadata: dict) -> int | None:
+    """The longest chain on one competency the run's schedule *permitted*.
+
+    What turns `longest_chain` from a number into a comparison: a chain of 4 means nothing
+    on its own and a great deal beside a ceiling of 2. Read off the record rather than off
+    config, so a run measured months later is compared against the budget it actually ran
+    under. A run with no `scheduler_decided` event had no schedule and gets None - nothing
+    in a single prompt counts what it has asked.
+    """
+    if not any(event.type == "scheduler_decided" for event in events):
+        return None
+    return 1 + int(metadata.get("max_followups_per_slot", 1))
 
 
 def measure_session(
@@ -45,8 +64,15 @@ def measure_session(
     resume_text: str,
     judge_provider=None,
 ) -> dict:
+    """Measure one record."""
     events = SessionStore(session_path).events()
     metadata = next((e.data for e in events if e.type == "run_metadata"), {})
+    lock_id = (metadata.get("experiment") or {}).get("lock_id") or next(
+        (e.data.get("lock_id") for e in events if e.type == "experiment_recorded"), None
+    )
+    ended = next((e.data for e in events if e.type == "interview_ended"), {})
+    interrupted = ended.get("reason") == "interrupted_by_candidate"
+
     run_kind = metadata.get("run_kind") or next(
         (e.type.removesuffix("_run") for e in events if e.type in ("smoke_run", "pilot_run")),
         "measurement",
@@ -59,7 +85,6 @@ def measure_session(
     measurements: list[QuestionMeasurement] = []
     prior_answer_terms: set[str] = set()
     answer_seconds: list[float] = []
-    over_deadline = 0
     answering_a_measured_question = False
     index = 0
 
@@ -68,28 +93,23 @@ def measure_session(
             prior_answer_terms |= extract_terms(event.data.get("text", ""), lexicon)
             if answering_a_measured_question:
                 answer_seconds.append(float(event.data.get("seconds_used", 0.0)))
-                over_deadline += bool(event.data.get("over_deadline"))
                 answering_a_measured_question = False
             continue
         if event.type != "question_asked":
             continue
 
-        # The opening turn is identical by construction, so it is excluded from every rate.
-        if event.data.get("kind") == "opening":
+        if event.data.get("kind") in ("opening", "clarification"):
             continue
 
         answering_a_measured_question = True
         index += 1
         question = event.data.get("text", "")
-        slot_id = label_by_rule(question, plan.slots)
-        resolved_by = "rule"
-
-        if slot_id is None:
-            if judge_provider is not None:
-                slot_id = judge_question(question, plan.slots, judge_provider)
-                resolved_by = "judge"
-            else:
-                resolved_by = "unresolved"
+        if judge_provider is not None:
+            slot_id = judge_question(question, plan.slots, judge_provider)
+            resolved_by = "judge"
+        else:
+            slot_id = None
+            resolved_by = "unresolved"
 
         slot = slots_by_id.get(slot_id) if slot_id else None
         measurements.append(
@@ -118,12 +138,14 @@ def measure_session(
     covered = {m.slot_id for m in measurements if m.slot_id}
     by_layer = {
         layer: sum(1 for m in measurements if m.resolved_by == layer)
-        for layer in ("rule", "judge", "unresolved")
+        for layer in ("judge", "unresolved")
     }
 
     return {
         "session": session_path.name,
         "run_kind": run_kind,
+        "experiment_lock_id": lock_id,
+        "interrupted": interrupted,
         "metadata": metadata,
         "denominator": plan.denominator,
         "coverage": {
@@ -137,23 +159,34 @@ def measure_session(
         "grounding_rate": (
             round(sum(m.grounded for m in measurements) / asked, 3) if asked else 0.0
         ),
-        "questions_measured": asked,
-        # The deadline is enforced, so answers cannot lengthen across iterations and
-        # quietly shorten the interviews. What these two numbers show instead is how often
-        # the respondent ran out of time: a run where several answers were cut carries
-        # less evidence per slot than one where none were, and a reader should be able to
-        # see that rather than infer it.
-        "answer_seconds_mean": (
-            round(sum(answer_seconds) / len(answer_seconds), 1) if answer_seconds else 0.0
+        "allocation": allocation_metrics.describe(
+            [m.slot_id for m in measurements], plan.denominator
         ),
-        "answers_over_deadline": over_deadline,
+        "schedule_ceiling": schedule_ceiling_of(events, dict(metadata)),
+        "questions_measured": asked,
+        "answer_seconds": describe(answer_seconds),
         "resolved_by": by_layer,
         "questions": [asdict(m) for m in measurements],
     }
 
 
+def describe(values: Sequence[float]) -> dict:
+    """Enough of the distribution to spot drift, not so much that nobody reads it."""
+    if not values:
+        return {"count": 0, "mean": 0.0, "median": 0.0, "min": 0.0, "max": 0.0, "total": 0.0}
+    return {
+        "count": len(values),
+        "mean": round(statistics.mean(values), 1),
+        "median": round(statistics.median(values), 1),
+        "min": round(min(values), 1),
+        "max": round(max(values), 1),
+        "total": round(sum(values), 1),
+    }
+
+
 def render(result: dict) -> str:
     coverage = result["coverage"]
+    seconds = result["answer_seconds"]
     layers = result["resolved_by"]
     total = max(result["questions_measured"], 1)
     lines = [
@@ -167,15 +200,21 @@ def render(result: dict) -> str:
         f"   ({coverage['value']:.0%})",
         f"    covered        {', '.join(coverage['covered_slots']) or '-'}",
         f"    missed         {', '.join(coverage['missed_slots']) or '-'}",
+    ]
+    lines += allocation_metrics.render(
+        result.get("allocation") or {}, ceiling=result.get("schedule_ceiling")
+    )
+    lines += [
         "",
         f"  carry-over rate  {result['carry_over_rate']:.0%}",
         f"  grounding rate   {result['grounding_rate']:.0%}",
         "",
         f"  questions        {result['questions_measured']}",
-        f"  answer time      {result['answer_seconds_mean']:.0f}s mean"
-        f"   ({result['answers_over_deadline']} over the target)",
-        f"  labelled by      rule {layers['rule'] / total:.0%}"
-        f"   judge {layers['judge'] / total:.0%}"
+        f"  answer time      {seconds['mean']:.0f}s mean"
+        f"   {seconds['median']:.0f}s median"
+        f"   {seconds['min']:.0f}-{seconds['max']:.0f}s range"
+        f"   {seconds['total'] / 60:.1f} min answering",
+        f"  labelled by      judge {layers['judge'] / total:.0%}"
         f"   unresolved {layers['unresolved'] / total:.0%}",
     ]
     warning = {
@@ -187,8 +226,39 @@ def render(result: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main(argv: Sequence[str]) -> int:
-    if len(argv) < 2:
+def build_judge(config, *, trace: bool = True):
+    """The judge, wrapped so every classification it makes lands in a trajectory.
+
+    The judge labels every question, so it decides the whole of the coverage figure - the
+    keyword layer that used to precede it resolved nothing and was removed. agentic-
+    workflows.md section 8 asks for a trace per agent, and this is the agent whose reasoning
+    a sceptical reader will most want to inspect.
+    """
+    provider = build_provider(config, config["judge"]["provider"])
+    if not trace:
+        return provider
+
+    from datetime import datetime, timezone
+
+    from solution.adapters.providers import TracingProvider
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    store = SessionStore(ROOT / "trajectories" / f"judge-{stamp}.jsonl")
+    store.append(
+        "trajectory_started",
+        agent="judge",
+        purpose="label which competency a question asked about",
+        instructions="evals/metrics/judge.py",
+        provider=provider.name,
+        model=provider.model,
+    )
+    return TracingProvider(provider, store, context={"agent": "judge"})
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Kept so the module runs on its own; `interview measure` is the documented path."""
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if not arguments:
         print(__doc__)
         return 2
 
@@ -196,10 +266,10 @@ def main(argv: Sequence[str]) -> int:
     plan = load_slot_plan(ROOT / config["role"] / "slots.yaml")
     resume_text = read_resume_text(ROOT / config["case"] / "cv.pdf")
 
-    use_judge = "--no-judge" not in argv
-    judge_provider = build_provider(config, config["judge"]["provider"]) if use_judge else None
+    use_judge = "--no-judge" not in arguments
+    judge_provider = build_judge(config) if use_judge else None
 
-    for raw_path in argv[1:]:
+    for raw_path in arguments:
         if raw_path.startswith("--"):
             continue
         session_path = Path(raw_path)
@@ -212,4 +282,4 @@ def main(argv: Sequence[str]) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    raise SystemExit(main())

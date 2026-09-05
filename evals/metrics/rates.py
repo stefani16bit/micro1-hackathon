@@ -15,8 +15,25 @@ zero on carry-over - which no single number could express, and is why there are 
 
 from __future__ import annotations
 
-from solution.domain.lexicon import extract_terms
+from solution.domain.lexicon import extract_terms, load_structural_terms
 from solution.domain.models import Slot
+
+STRUCTURAL = load_structural_terms()
+
+
+def drift_terms(text: str, lexicon: frozenset[str]) -> frozenset[str]:
+    """The terms in `text` that could constitute drift: technologies, never layers.
+
+    `extract_terms` deliberately recognises anything that looks technical, because the
+    *lexicon* has no business deciding what is interesting. That judgement belongs here,
+    where the question being answered is "did this question chase something the candidate
+    introduced" - and "backend" is not something a candidate introduces.
+
+    Measured over iteration 0, leaving this out made the carry-over rate 100% on the
+    strength of `backend`, `api`, `ui` and `request`, while the five consecutive questions
+    about one idempotency key went uncounted. The rate was reporting the domain.
+    """
+    return extract_terms(text, lexicon) - STRUCTURAL
 
 
 def _slot_vocabulary(slot: Slot | None) -> frozenset[str]:
@@ -37,7 +54,7 @@ def is_carry_over(
     A term belonging to the competency being asked about does not count: asking about the
     slot is the job, and the candidate mentioning it first does not make it drift.
     """
-    terms = extract_terms(question, lexicon)
+    terms = drift_terms(question, lexicon)
     return bool((terms & prior_answer_terms) - _slot_vocabulary(slot))
 
 
@@ -55,5 +72,5 @@ def is_grounded(
     carry-over wearing grounding's clothes. The credit belongs to an interviewer that
     read the CV, not to one that repeats what it just heard.
     """
-    terms = extract_terms(question, lexicon)
+    terms = drift_terms(question, lexicon)
     return bool((terms & resume_terms) - _slot_vocabulary(slot) - prior_answer_terms)
