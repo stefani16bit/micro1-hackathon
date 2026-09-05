@@ -21,7 +21,7 @@ class MalformedResponse(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class LlmRequest:
-    call: str  # L1-L7 in the plan; also the label used in trajectories
+    call: str
     system: str
     prompt: str
     schema: Mapping[str, Any]
@@ -110,7 +110,9 @@ def parse_json_payload(raw: str) -> Mapping[str, Any]:
             "required keys have to be on an object wrapping it"
         )
     if not isinstance(parsed, dict):
-        raise MalformedResponse(f"expected a JSON object at the top level, got {type(parsed).__name__}")
+        raise MalformedResponse(
+            f"expected a JSON object at the top level, got {type(parsed).__name__}"
+        )
     return parsed
 
 

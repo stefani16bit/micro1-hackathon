@@ -13,6 +13,7 @@ from solution.adapters.providers.base import (
 from solution.adapters.providers.claude_cli import ClaudeCliProvider
 from solution.adapters.providers.fixtures import FixtureProvider, RecordingProvider, UnknownFixture
 from solution.adapters.providers.ollama import OllamaProvider
+from solution.adapters.providers.tracing import TracingProvider
 
 __all__ = [
     "ClaudeCliProvider",
@@ -23,6 +24,7 @@ __all__ = [
     "MalformedResponse",
     "OllamaProvider",
     "RecordingProvider",
+    "TracingProvider",
     "UnknownFixture",
     "build_provider",
 ]

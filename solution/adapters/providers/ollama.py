@@ -34,8 +34,6 @@ class OllamaProvider(LlmProvider):
                 {"role": "system", "content": request.system},
                 {"role": "user", "content": request.prompt},
             ],
-            # Ollama enforces the JSON Schema server-side, which removes a whole class of
-            # parsing failures instead of papering over them with retries.
             "format": dict(request.schema),
             "stream": False,
             "think": False,
