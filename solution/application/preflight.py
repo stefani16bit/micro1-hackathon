@@ -1,26 +1,24 @@
 """Everything that must hold before an interview starts.
 
-    python -m solution.application.preflight
+    interview run   (the preflight is read-only there)
+    interview prepare   (the only command that rebuilds anything)
 
-Three artifacts in this project are derived from inputs a person edits: the redacted CV,
-the frozen slot plan, and the résumé evidence. Nothing forced them to stay in step, and
-the failure mode was silence rather than a crash - swap the CV and the evidence file goes
-on describing the previous one, so the interviewer asks situational questions about
-experience the candidate now has.
+Three artifacts are derived from inputs a person edits: the redacted CV, the frozen slot
+plan, and the résumé evidence. When they fall out of step the failure is silence rather
+than a crash - swap the CV and the evidence file goes on describing the previous one, so
+the interviewer asks situational questions about experience the candidate now has.
 
-The rule here is not "regenerate everything". Regenerating the slot plan when `role.txt`
-changes would move the denominator of the primary metric and quietly invalidate every
-comparison across the eleven iterations. So:
+The rule is not "regenerate everything", because regenerating the slot plan would move the
+denominator of the primary metric:
 
 - **Derived and safe** - the redacted CV. Deterministic, carries no experimental meaning,
-  regenerated automatically whenever the original changes.
+  rebuilt whenever the original changes.
 - **Frozen** - the slot plan and the résumé evidence. Staleness is *detected* and the run
   stops with the command that fixes it. Re-freezing is a decision, and a decision needs a
   person.
 
-Identity is by content, never by timestamp: the redacted CV carries the digest of the
-original it came from in its own metadata, and the evidence file records both that digest
-and the fingerprint of the plan it was resolved against.
+Identity is by content, never by timestamp. `rebuild` decides whether this may touch
+anything at all: `prepare` passes True, `run` passes False and stops instead.
 """
 
 from __future__ import annotations
@@ -38,6 +36,7 @@ from solution.adapters.slot_plan import SlotPlanError, load_slot_plan
 
 
 EVIDENCE_STALE = "evidence_stale"
+DERIVED_STALE = "derived_stale"
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,7 +61,7 @@ class Preflight:
         """True when only the résumé evidence is out of step.
 
         Regenerating it is safe *before* the first measured run and destructive after one:
-        the evidence is an input held constant across the eleven iterations, so changing
+        the evidence is an input held constant across every rung, so changing
         it midway would mean two halves of the ladder ran against different inputs. The
         caller decides which situation it is in; this only reports the shape.
         """
@@ -74,12 +73,14 @@ def prepare(
     role_dir: Path,
     case_dir: Path,
     require_frozen_opening: bool = True,
+    rebuild: bool = True,
 ) -> Preflight:
-    """Check the inputs, regenerate what is safe to regenerate, report what is not.
+    """Check the inputs; rebuild what is safe to rebuild, report what is not.
 
-    Has side effects on purpose: the redacted CV is rebuilt here rather than reported as a
-    problem, because rebuilding it is deterministic and changes nothing about the
-    experiment.
+    With `rebuild=True` the redacted CV is regenerated here rather than reported as a
+    problem, because regenerating it is deterministic and changes nothing about the
+    experiment. With `rebuild=False` nothing on disk is touched and the same condition is
+    reported instead - that is how `interview run` stays read-only.
     """
     derived: list[str] = []
     problems: list[Problem] = []
@@ -91,7 +92,6 @@ def prepare(
     evidence_yaml = case_dir / "resume-evidence.yaml"
     opening_md = case_dir / "opening-answer.md"
 
-    # --- the role and its frozen plan ---------------------------------------------
     role_digest: str | None = None
     plan = None
 
@@ -112,8 +112,8 @@ def prepare(
                 what=f"{slots_yaml} is missing",
                 why="the slot plan is the denominator of the primary metric",
                 fix=(
-                    f"python -m solution.application.ingest_role {role_dir}"
-                    "  then review slots.draft.yaml and rename it to slots.yaml"
+                    "interview role-extract   then review slots.draft.yaml and "
+                    "rename it to slots.yaml"
                 ),
             )
         )
@@ -153,14 +153,13 @@ def prepare(
                     ),
                     fix=(
                         "either restore the original role.txt, or re-extract "
-                        f"(python -m solution.application.ingest_role {role_dir}), review, "
-                        "re-freeze, and record the change in PREREGISTRATION.md and "
-                        "CHANGELOG.md before running anything"
+                        "(interview role-extract), review, re-freeze, and record the "
+                        "change in PREREGISTRATION.md and CHANGELOG.md before running "
+                        "anything"
                     ),
                 )
             )
 
-    # --- the candidate's CV --------------------------------------------------------
     cv_digest: str | None = None
 
     if not original_cv.exists():
@@ -173,7 +172,23 @@ def prepare(
         )
     else:
         cv_digest = file_digest(original_cv)
-        if recorded_source_digest(redacted_cv) != cv_digest:
+        if recorded_source_digest(redacted_cv) != cv_digest and not rebuild:
+            problems.append(
+                Problem(
+                    what=(
+                        f"{redacted_cv.name} is missing"
+                        if not redacted_cv.exists()
+                        else f"{redacted_cv.name} was derived from a different original"
+                    ),
+                    why=(
+                        "the interview reads the redacted CV, so running now would put a "
+                        "different CV in front of the interviewer than the one on disk"
+                    ),
+                    fix="interview prepare",
+                    kind=DERIVED_STALE,
+                )
+            )
+        elif recorded_source_digest(redacted_cv) != cv_digest:
             result = redact(original_cv, redacted_cv)
             still_readable = tuple(
                 item for item in result.removed if item in _text_of(redacted_cv)
@@ -183,20 +198,19 @@ def prepare(
                     Problem(
                         what="redaction did not remove everything it found",
                         why=f"still readable in cv.pdf: {list(still_readable)}",
-                        fix="do not commit cv.pdf; investigate scripts/redact_cv.py",
+                        fix="do not commit cv.pdf; investigate solution/adapters/cv_redaction.py",
                     )
                 )
             else:
                 removed = ", ".join(result.removed) or "nothing matched"
                 derived.append(f"cv.pdf rebuilt from cv-original.pdf (removed: {removed})")
 
-    # --- the résumé evidence -------------------------------------------------------
     if not evidence_yaml.exists():
         problems.append(
             Problem(
                 what=f"{evidence_yaml} is missing",
                 why="has_experience per slot decides behavioural vs situational phrasing",
-                fix=f"python -m solution.application.ingest_resume {case_dir}",
+                fix="interview prepare",
                 kind=EVIDENCE_STALE,
             )
         )
@@ -215,7 +229,7 @@ def prepare(
                         "on it would ask situational questions about experience this "
                         "candidate has, and behavioural ones about experience they do not"
                     ),
-                    fix=f"python -m solution.application.ingest_resume {case_dir}",
+                    fix="interview prepare",
                     kind=EVIDENCE_STALE,
                 )
             )
@@ -224,12 +238,11 @@ def prepare(
                 Problem(
                     what="the résumé evidence was resolved against a different slot plan",
                     why="its slots no longer match the frozen plan the interview will use",
-                    fix=f"python -m solution.application.ingest_resume {case_dir}",
+                    fix="interview prepare",
                     kind=EVIDENCE_STALE,
                 )
             )
 
-    # --- the frozen opening --------------------------------------------------------
     if require_frozen_opening:
         frozen = opening_md.exists() and bool(load_fenced_blocks(opening_md))
         if not frozen:
@@ -238,8 +251,9 @@ def prepare(
                     what=f"{opening_md} holds no frozen opening answer",
                     why="the opening answer is the controlled stimulus; it must be "
                     "identical in every measured run",
-                    fix="run with --pilot to produce it in the candidate's own words, "
-                    "then paste it into a fenced block in that file",
+                    fix="interview run --baseline   captures it: the candidate answers "
+                    "the first question as they answer any other, and it is frozen at "
+                    "the moment it is given. Nothing to paste, and nothing to run first.",
                 )
             )
 
@@ -269,17 +283,18 @@ def render(report: Preflight) -> str:
     return "\n".join(lines)
 
 
-def main(argv: Sequence[str]) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
     root = Path(__file__).resolve().parents[2]
     config = yaml.safe_load((root / "config.yaml").read_text(encoding="utf-8"))
     report = prepare(
         role_dir=root / config["role"],
         case_dir=root / config["case"],
-        require_frozen_opening="--pilot" not in argv,
+        require_frozen_opening="--pilot" not in arguments,
     )
     print(render(report))
     return 0 if report.ok else 2
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    raise SystemExit(main())

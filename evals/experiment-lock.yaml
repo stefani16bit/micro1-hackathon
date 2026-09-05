@@ -1,0 +1,31 @@
+# The experiment this ladder is measuring. Written by the first measured run, checked by
+# every run after it, never edited by hand.
+#
+# PREREGISTRATION.md section 4 lists what invalidates the result: the slot plan changing,
+# the opening answer differing between runs, inputs moving mid-ladder. This file is how
+# that promise is enforced rather than remembered.
+#
+# lock_id is derived from `inputs` and `budget`, so re-freezing identical inputs produces
+# the same id, and changing any one of them mints a new experiment on its own.
+#
+# `tracked` is recorded and reported but never blocks a run - see solution/application/
+# experiment.py for why the response brief sits there rather than under `inputs`.
+lock_id: 7c0d8c6dbd84
+frozen_at: '2026-08-31T12:31:32Z'
+commit: f756b59
+role: roles/fullstack
+case: evals/cases/case-01
+inputs:
+  role_sha256: 0cd28bd0962f02d117b03cd3dc14c7043eccec69c035980f2e864209c91bccff
+  slot_plan_fingerprint: 211aa132eaa8d339828e5a9bbe2237b82c99123d53439e5bc20dd1f581f2dc18
+  cv_source_sha256: ec76de419b54a0573b4fcc216d5081f9323040e8cdecf3351b0397cea0a4643b
+  resume_evidence_sha256: b0ea8b38a92c10341af57d6d72625efd2edffaca504cdd33c88d61ccb8b4b120
+  opening_answer_sha256: 79c5782e54df851e80440515b7116dd23360e3cae3f733af304857682688f4ae
+budget:
+  total_seconds: 1500
+  expected_answer_seconds: 120
+  turn_overhead_seconds: 15
+  max_slots: 6
+opening_answer_seconds: 142.27
+tracked:
+  response_brief_sha256: 292a697850db34744848843c366c85e7d4630f780dbdb9bfd4eb5c345949f9da

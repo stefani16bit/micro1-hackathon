@@ -52,7 +52,6 @@ def build_case(tmp_path, *, role_text="Fullstack role. React. AWS.", cv_line=Non
         "# opening\n\n```\nI am a software engineer.\n```\n", encoding="utf-8"
     )
 
-    # First pass builds cv.pdf; then record evidence that matches it.
     prepare(role_dir=role_dir, case_dir=case_dir)
     evidence = {
         "provenance": {
@@ -99,7 +98,7 @@ class TestTheRedactedCv:
         with pymupdf.open(case_dir / "cv.pdf") as document:
             text = "\n".join(page.get_text() for page in document)
         assert "alice@example.com" not in text
-        assert "Alice Example" in text  # the name stays; the author signs their own work
+        assert "Alice Example" in text
 
 
 class TestStaleResumeEvidence:
