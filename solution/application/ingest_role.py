@@ -1,6 +1,6 @@
 """Turn a job description into a draft slot plan for a human to review and freeze.
 
-    python -m solution.application.ingest_role roles/fullstack
+    interview role-extract
 
 Writes roles/<role>/slots.draft.yaml. It deliberately does not write slots.yaml: the plan
 is the denominator of the primary metric, so a person reviews it and renames it. That
@@ -92,7 +92,6 @@ def split_by_budget(
     excluded = [
         {"name": item["name"], "reason": budget_note} for item in ordered[max_slots:]
     ]
-    # Ranks must be a contiguous 1..N sequence for the frozen plan to load.
     renumbered = [{**item, "rank": index + 1} for index, item in enumerate(kept)]
     return DraftPlan(kept=tuple(renumbered), excluded=tuple(excluded))
 
@@ -117,10 +116,6 @@ def render_draft(
         "role": role_name,
         "source": source,
         "frozen_at": frozen_at,
-        # The digest of the job description this plan was extracted from. The preflight
-        # compares it against the current role.txt and refuses to run an interview when
-        # they disagree - a plan frozen against a different role would silently change the
-        # competencies coverage is measured over.
         "provenance": {"role_sha256": file_digest(role_dir / "role.txt")},
         "slots": [dict(slot) for slot in plan.kept],
         "excluded": [dict(item) for item in plan.excluded],
@@ -134,19 +129,23 @@ def render_draft(
     return path
 
 
-def main(argv: Sequence[str]) -> int:
-    if len(argv) < 2:
+def main(argv: Sequence[str] | None = None) -> int:
+    """Kept so the module runs on its own; `interview role-extract` is the documented path."""
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if not arguments:
         print(__doc__)
         return 2
 
     root = Path(__file__).resolve().parents[2]
-    role_dir = root / argv[1]
+    role_dir = root / arguments[0]
     config = yaml.safe_load((root / "config.yaml").read_text(encoding="utf-8"))
 
     from solution.adapters.providers import build_provider
 
     provider = build_provider(config)
-    role_text = (role_dir / "role.txt").read_text(encoding="utf-8")
+    from solution.adapters.role_text import read_role_text
+
+    role_text = read_role_text(role_dir / "role.txt")
 
     competencies = extract(role_text, provider)
     max_slots = int(config["interview"].get("max_slots", 6))
@@ -171,4 +170,4 @@ def main(argv: Sequence[str]) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    raise SystemExit(main())

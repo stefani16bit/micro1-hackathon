@@ -15,7 +15,6 @@ def test_strips_surrounding_punctuation_but_keeps_internal_dots():
 
 
 def test_recognises_internal_capitals_absent_from_the_lexicon():
-    # PostgreSQL is in the lexicon; GraphQL is not, and must still be caught.
     assert "graphql" in extract_terms("We exposed a GraphQL layer.", LEXICON)
 
 

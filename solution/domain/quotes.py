@@ -1,10 +1,9 @@
 """Verbatim-quote checking.
 
-Every per-slot rating in the final report carries a quote from the candidate as its
-evidence - `research/interview-guidance.md` section 8: "a rating without a quote is an
-impression". That only holds if the quote is real. A model asked for verbatim text
-will occasionally return a fluent paraphrase, so the claim is checked here instead of
-trusted, and a quote that fails this check never reaches the report.
+A model asked for verbatim text will occasionally return a fluent paraphrase instead, so
+the claim is checked rather than trusted: a quote that fails never reaches the report and
+the slot is recorded as unevidenced. `research/interview-guidance.md` section 8 - "a rating
+without a quote is an impression" - only holds if the quote is real.
 """
 
 from __future__ import annotations

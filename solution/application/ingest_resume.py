@@ -1,6 +1,6 @@
 """Resolve, once and for all, what the CV says about each slot.
 
-    python -m solution.application.ingest_resume evals/cases/case-01
+    interview prepare
 
 Writes `resume-evidence.yaml`. This runs at session start and is frozen before turn 1,
 which matters more than it looks: `has_experience` decides whether a slot gets a
@@ -16,6 +16,7 @@ not evidence.
 from __future__ import annotations
 
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -120,32 +121,30 @@ def extract(resume_text: str, plan: SlotPlan, provider: LlmProvider) -> Sequence
     return provider.complete_json(request).payload["matches"]
 
 
-def main(argv: Sequence[str]) -> int:
-    if len(argv) < 2:
-        print(__doc__)
-        return 2
+@dataclass(frozen=True, slots=True)
+class EvidenceRefresh:
+    target: Path
+    verified: tuple[Mapping[str, Any], ...]
+    discarded: tuple[str, ...]
 
-    root = Path(__file__).resolve().parents[2]
-    case_dir = root / argv[1]
-    config = yaml.safe_load((root / "config.yaml").read_text(encoding="utf-8"))
 
+def refresh(
+    *, case_dir: Path, plan: SlotPlan, provider: LlmProvider
+) -> EvidenceRefresh:
+    """Resolve the CV against the slot plan and write `resume-evidence.yaml`.
+
+    Shared by `interview prepare` and the module's own entry point, so there is one
+    implementation of what the evidence file contains rather than two that drift.
+    """
     from solution.adapters.cv_redaction import file_digest
-    from solution.adapters.providers import build_provider
     from solution.adapters.resume_pdf import read_resume_text
-    from solution.adapters.slot_plan import load_slot_plan
 
-    plan = load_slot_plan(root / config["role"] / "slots.yaml")
     resume_text = read_resume_text(case_dir / "cv.pdf")
-    provider = build_provider(config)
-
     matches = extract(resume_text, plan, provider)
     verified, discarded = verify(matches, resume_text, plan)
 
     target = case_dir / "resume-evidence.yaml"
     document = {
-        # Recorded so the preflight can tell whether this file still describes the CV and
-        # the slot plan actually in use. Swapping the CV without re-running this used to
-        # fail silently rather than loudly.
         "provenance": {
             "cv_source_sha256": file_digest(case_dir / "cv-original.pdf"),
             "slot_plan_fingerprint": plan.fingerprint,
@@ -159,18 +158,45 @@ def main(argv: Sequence[str]) -> int:
         + yaml.safe_dump(document, sort_keys=False, allow_unicode=True),
         encoding="utf-8",
     )
+    return EvidenceRefresh(
+        target=target, verified=tuple(verified), discarded=tuple(discarded)
+    )
 
-    print(f"wrote {target}\n")
-    for entry in verified:
+
+def render(result: EvidenceRefresh) -> str:
+    lines = [f"  wrote {result.target}", ""]
+    for entry in result.verified:
         mark = "yes" if entry["has_experience"] else "NO "
-        quote = entry["evidence_quote"][:64].replace("\n", " ")
-        print(f"  {mark}  {entry['slot_id']:<26} {quote}")
-    if discarded:
-        print("\nDiscarded, unverifiable against the CV:")
-        for item in discarded:
-            print(f"  - {item}")
+        quote = entry["evidence_quote"][:60].replace("\n", " ")
+        lines.append(f"    {mark}  {entry['slot_id']:<26} {quote}")
+    if result.discarded:
+        lines += ["", "  discarded, unverifiable against the CV:"]
+        lines += [f"    - {item}" for item in result.discarded]
+    return "\n".join(lines)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Kept so the module runs on its own; `interview prepare` is the documented path."""
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if not arguments:
+        print(__doc__)
+        return 2
+
+    from solution.adapters.providers import build_provider
+    from solution.adapters.slot_plan import load_slot_plan
+
+    root = Path(__file__).resolve().parents[2]
+    config = yaml.safe_load((root / "config.yaml").read_text(encoding="utf-8"))
+    plan = load_slot_plan(root / config["role"] / "slots.yaml")
+
+    result = refresh(
+        case_dir=root / arguments[0],
+        plan=plan,
+        provider=build_provider(config),
+    )
+    print(render(result))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    raise SystemExit(main())

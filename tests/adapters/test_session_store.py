@@ -58,3 +58,26 @@ def test_an_unwritten_session_simply_has_no_events(tmp_path):
 def test_refuses_payloads_it_cannot_serialise(tmp_path):
     with pytest.raises(TypeError):
         store(tmp_path).append("broken", value=object())
+
+
+def test_concurrent_appends_neither_lose_nor_repeat_a_sequence(tmp_path):
+    """From iteration 2 the interviewer composes the next question on a background thread
+    while the candidate answers, so two threads write to one record."""
+    import threading
+
+    store = SessionStore(tmp_path / "session.jsonl")
+    barrier = threading.Barrier(8)
+
+    def write(n: int) -> None:
+        barrier.wait()
+        for i in range(20):
+            store.append("model_call", writer=n, index=i)
+
+    threads = [threading.Thread(target=write, args=(n,)) for n in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    sequences = [event.sequence for event in store.events()]
+    assert sequences == list(range(1, 161))

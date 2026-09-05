@@ -16,7 +16,9 @@ from typing import Iterable
 _TRIM = ".,;:!?()[]{}<>\"'`"
 _SPLIT = re.compile(r"[\s/]+")
 
-_BASE_LEXICON_PATH = Path(__file__).parent / "data" / "tech_lexicon.txt"
+_DATA = Path(__file__).parent / "data"
+_BASE_LEXICON_PATH = _DATA / "tech_lexicon.txt"
+_STRUCTURAL_PATH = _DATA / "structural_terms.txt"
 
 
 def _tokens(text: str) -> Iterable[str]:
@@ -30,11 +32,11 @@ def _looks_technical(token: str) -> bool:
     if len(token) < 2:
         return False
     if any(character.isupper() for character in token[1:]):
-        return True  # PostgreSQL, GraphQL, JavaScript
+        return True
     if token.isupper() and token.isalpha():
-        return True  # API, AWS, JWT
+        return True
     if any(mark in token for mark in ".+#") and any(c.isalpha() for c in token):
-        return True  # Node.js, C++, C#
+        return True
     return False
 
 
@@ -55,14 +57,28 @@ def extract_terms(text: str, lexicon: frozenset[str]) -> frozenset[str]:
     return frozenset(found)
 
 
-def load_base_lexicon(path: Path | None = None) -> frozenset[str]:
-    source = path or _BASE_LEXICON_PATH
+def _load_terms(source: Path) -> frozenset[str]:
     if not source.exists():
         return frozenset()
     lines = source.read_text(encoding="utf-8").splitlines()
     return frozenset(
         line.strip().lower() for line in lines if line.strip() and not line.startswith("#")
     )
+
+
+def load_base_lexicon(path: Path | None = None) -> frozenset[str]:
+    return _load_terms(path or _BASE_LEXICON_PATH)
+
+
+def load_structural_terms(path: Path | None = None) -> frozenset[str]:
+    """Vocabulary that names a layer rather than a technology.
+
+    Subtracted by the drift rates in `evals/metrics/rates.py` and by nothing else - a
+    question is still *about* the frontend when it says "frontend", so this must never
+    reach the labelling of what a question covered. See the file's own header for the
+    membership test and for what is deliberately absent from it.
+    """
+    return _load_terms(path or _STRUCTURAL_PATH)
 
 
 def build_lexicon(

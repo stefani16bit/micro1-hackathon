@@ -30,7 +30,7 @@ class Slot:
     name: str
     kind: SlotKind
     keywords: tuple[str, ...]
-    rank: int  # relevance order, 1 is most relevant
+    rank: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,13 +48,22 @@ class ResumeEvidence:
 
 @dataclass(frozen=True, slots=True)
 class TimeBudget:
+    """How long the interview lasts, and how long a turn is *expected* to take.
+
+    Only `total_seconds` is enforced. `expected_answer_seconds` is a forecast used to plan
+    how many turns are likely to fit; nothing measures an answer against it. The name says
+    so, because the earlier one (`answer_deadline_seconds`) did not, and that is how a
+    planning figure quietly becomes a deadline.
+    """
+
     total_seconds: int = 1500
-    answer_deadline_seconds: int = 120
+    expected_answer_seconds: int = 120
     turn_overhead_seconds: int = 15
 
     @property
-    def turn_cost_seconds(self) -> int:
-        return self.answer_deadline_seconds + self.turn_overhead_seconds
+    def expected_turn_seconds(self) -> int:
+        """A planning estimate for one question plus one answer. Never enforced."""
+        return self.expected_answer_seconds + self.turn_overhead_seconds
 
 
 class ActionType(Enum):
@@ -70,5 +79,4 @@ class Action:
 
     type: ActionType
     slot: Slot | None = None
-    answer_deadline_seconds: int = 0
     reason: str = ""

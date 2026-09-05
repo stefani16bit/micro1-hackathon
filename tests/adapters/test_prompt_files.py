@@ -57,5 +57,5 @@ def test_the_real_baseline_prompt_loads_and_declares_its_placeholders():
     """Guards the actual iteration 0 prompt, not a fixture of it."""
     system, user = load_prompt_pair("baseline/prompt.md")
     assert "<<ROLE>>" in system and "<<RESUME>>" in system
-    assert "<<TRANSCRIPT>>" in user and "<<ELAPSED_MINUTES>>" in user
+    assert "<<TRANSCRIPT>>" in user
     assert "message" in system

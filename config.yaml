@@ -34,15 +34,34 @@ judge:
   provider: claude_cli
 
 interview:
-  total_seconds: 1500          # 25 minutes
-  answer_deadline_seconds: 120 # constant, never recalculated (D6)
+  total_seconds: 1500          # 25 minutes - the only limit that is enforced
+  # A forecast, never a limit. The candidate answers at their own pace and submits when
+  # they are done; nothing compares an answer against this number. It exists so the
+  # scheduler can plan how many turns are likely to fit. The interview being modelled is
+  # spoken, and a spoken interview advances when the candidate stops talking.
+  expected_answer_seconds: 120
   turn_overhead_seconds: 15    # time the interviewer itself consumes per turn
   max_followups_per_slot: 1
   # The budget technically fits ~10 primary questions at 135 s each. Six leaves room for
   # follow-ups; competencies beyond the sixth are recorded in slots.yaml as excluded.
   max_slots: 6
-  # The opening answer is replayed verbatim, so it is charged a constant time cost too.
-  opening_answer_seconds: 100
+  # The opening answer's time cost is not configured: it is whatever the answer actually
+  # took when the baseline captured it, recorded in evals/experiment-lock.yaml and charged
+  # identically in every replay. A number chosen here would make the stimulus cost one
+  # thing in the run that produced it and another in the ten that replay it.
+
+# Which rung `interview run --baseline` and `--solution` resolve to. They exist because
+# the reproduction guide has to name stable commands: the brief asks for the exact commands
+# for solution, baseline and evaluation, and those names must keep working even if the
+# final rung turns out not to be the tenth.
+iterations:
+  baseline: 0
+  solution: 3
 
 role: roles/fullstack
 case: evals/cases/case-01
+
+# The experiment the ladder is measuring: the digests of every input PREREGISTRATION.md
+# section 1 fixes. Written by `interview freeze`, checked by every measured run. See
+# solution/application/experiment.py.
+experiment_lock: evals/experiment-lock.yaml

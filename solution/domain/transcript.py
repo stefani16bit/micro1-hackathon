@@ -1,9 +1,8 @@
 """The record of one interview as it unfolds.
 
-Time is accumulated here rather than read from a wall clock at the end, because both
-halves of a turn cost the candidate something: the interviewer's thinking time comes out
-of the same 25 minutes the candidate's answers do. Measuring only the answers would hide
-a slow interviewer behind a shortened interview.
+Time is accumulated here rather than read off a wall clock at the end: the interviewer's
+thinking comes out of the same 25 minutes the answers do, and measuring only the answers
+would hide a slow interviewer behind a shortened interview.
 """
 
 from __future__ import annotations
@@ -20,15 +19,14 @@ class Speaker(str, Enum):
 @dataclass(frozen=True, slots=True)
 class Utterance:
     text: str
-    kind: str  # opening | primary | follow_up | clarification
-    slot_id: str | None = None  # None before iteration 4, which has no slot concept
+    kind: str
+    slot_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class Answer:
     text: str
     seconds_used: float
-    over_deadline: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,7 +36,6 @@ class TranscriptEntry:
     seconds: float
     kind: str = ""
     slot_id: str | None = None
-    over_deadline: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +57,6 @@ class Transcript:
             speaker=Speaker.CANDIDATE,
             text=answer.text,
             seconds=answer.seconds_used,
-            over_deadline=answer.over_deadline,
         )
         return replace(self, entries=self.entries + (entry,))
 

@@ -88,3 +88,77 @@ def test_a_clarification_that_introduces_new_technical_content_is_a_leak():
     )
     assert Violation.LEAKAGE in result.violations
     assert "redis" in result.evidence["leakage"]
+
+
+class TestTheSlotsOwnResumeEvidenceIsNotDrift:
+    """Found by running it: the gate was rejecting the questions it exists to encourage.
+
+    The CV says the candidate built "payment microservices". The candidate says
+    "microservices" in an answer. A question grounded in that CV line then looks exactly
+    like a question chasing the answer - and on a smoke run this pushed two of six slots
+    onto the generic fallback template, with the gate defeating the grounding beside it.
+    """
+
+    BACKEND = Slot(
+        "backend", "backend development", SlotKind.LANGUAGE_FRAMEWORK,
+        ("backend", "node.js", "express"), 2,
+    )
+    LEXICON = frozenset({"microservices", "node.js", "express", "backend", "react", "kafka"})
+
+    def _context(self, allowed):
+        return GateContext(
+            slot=self.BACKEND,
+            lexicon=self.LEXICON,
+            prior_answer_terms=frozenset({"microservices", "react"}),
+            allowed_terms=allowed,
+        )
+
+    def test_a_question_grounded_in_this_slots_cv_line_passes(self):
+        result = check_question(
+            "Tell me about the payment microservices you maintained in the backend?",
+            self._context(frozenset({"microservices"})),
+        )
+        assert result.passed, result.evidence
+
+    def test_the_same_question_is_drift_when_the_cv_does_not_say_it(self):
+        """The allowance is the slot's own evidence, not a blanket amnesty."""
+        result = check_question(
+            "Tell me about the payment microservices you maintained in the backend?",
+            self._context(frozenset()),
+        )
+        assert Violation.CARRY_OVER in result.violations
+
+    def test_a_term_outside_the_cv_line_is_still_drift(self):
+        result = check_question(
+            "How did React change the way you built the backend?",
+            self._context(frozenset({"microservices"})),
+        )
+        assert Violation.CARRY_OVER in result.violations
+        assert "react" in result.evidence["carry_over"]
+
+
+class TestAcknowledgingTheAnswer:
+    """The interviewer may say something human before its question. What it may not do is
+    say something *about the answer*: an isolated interviewer never read it, and one that
+    summarises it has told the candidate what it heard."""
+
+    def test_a_neutral_acknowledgment_before_the_question_passes(self):
+        result = check_question(
+            "Thanks for that. Tell me about a production problem in AWS you owned?",
+            ctx(prior_answer_terms=frozenset({"react", "hooks"})),
+        )
+        assert result.passed, result.evidence
+
+    def test_an_acknowledgment_that_summarises_the_answer_is_still_drift(self):
+        result = check_question(
+            "So React hooks were the hard part. Tell me about a problem in AWS you owned?",
+            ctx(prior_answer_terms=frozenset({"react", "hooks"})),
+        )
+        assert Violation.CARRY_OVER in result.violations
+
+    def test_an_acknowledgment_cannot_smuggle_in_a_second_question(self):
+        result = check_question(
+            "Interesting, was it? Tell me about a problem in AWS you owned?",
+            ctx(),
+        )
+        assert Violation.FORM in result.violations

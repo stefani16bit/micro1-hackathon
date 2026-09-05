@@ -74,7 +74,7 @@ def check_question(text: str, context: GateContext) -> GateResult:
         violations.append(Violation.OFF_SLOT)
         evidence["off_slot"] = tuple(sorted(slot_terms))
 
-    carried = (terms & context.prior_answer_terms) - slot_terms
+    carried = (terms & context.prior_answer_terms) - slot_terms - context.allowed_terms
     if carried:
         violations.append(Violation.CARRY_OVER)
         evidence["carry_over"] = tuple(sorted(carried))

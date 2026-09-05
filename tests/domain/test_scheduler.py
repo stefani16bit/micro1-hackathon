@@ -1,4 +1,4 @@
-"""The scheduler encodes two promises to the candidate: the answer deadline is a constant,
+"""The scheduler encodes two promises to the candidate: nothing here can shorten an answer,
 and breadth is never traded for depth. Both are tested here rather than asserted in prose."""
 
 import pytest
@@ -7,8 +7,8 @@ from solution.domain.models import ActionType, Slot, SlotKind, TimeBudget
 from solution.domain.scheduler import decide_next
 from solution.domain.session import SessionState
 
-BUDGET = TimeBudget(total_seconds=1500, answer_deadline_seconds=120, turn_overhead_seconds=15)
-TURN = 135  # answer_deadline + turn_overhead
+BUDGET = TimeBudget(total_seconds=1500, expected_answer_seconds=120, turn_overhead_seconds=15)
+TURN = 135
 
 
 def slot(rank: int, sid: str) -> Slot:
@@ -45,8 +45,6 @@ def test_a_followup_is_allowed_when_every_remaining_primary_still_fits():
 
 
 def test_breadth_beats_depth_when_time_only_covers_the_remaining_primaries():
-    # Two primaries left (frontend, cloud) and room for exactly two more turns:
-    # the follow-up must be refused even though the model asked for it.
     s = state(
         opening_asked=True,
         elapsed_seconds=BUDGET.total_seconds - 2 * TURN,
@@ -80,8 +78,17 @@ def test_no_turn_is_issued_that_the_remaining_time_cannot_honour():
 
 
 @pytest.mark.parametrize("elapsed", [0, 600, 1200, 1364])
-def test_the_answer_deadline_never_shrinks_with_remaining_time(elapsed):
-    """D6: the interview shortens, the candidate's turn does not."""
-    s = state(opening_asked=True, elapsed_seconds=elapsed)
-    action = decide_next(s, BUDGET, followup_wanted=False)
-    assert action.answer_deadline_seconds == BUDGET.answer_deadline_seconds
+def test_no_action_carries_a_limit_on_the_candidates_turn(elapsed):
+    """The interview shortens when time runs short; the candidate's turn cannot, because
+    there is no field in which a limit could be expressed."""
+    action = decide_next(
+        state(opening_asked=True, elapsed_seconds=elapsed), BUDGET, followup_wanted=False
+    )
+    assert not hasattr(action, "answer_deadline_seconds")
+
+
+def test_the_turn_forecast_is_a_forecast_and_not_a_budget_for_the_answer():
+    """`expected_turn_seconds` decides whether to plan another turn. Nothing measures an
+    answer against it - the rename exists because the old name invited exactly that."""
+    assert BUDGET.expected_turn_seconds == TURN
+    assert not hasattr(BUDGET, "turn_cost_seconds")

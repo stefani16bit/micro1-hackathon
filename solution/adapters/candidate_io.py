@@ -2,7 +2,7 @@
 
 `FrozenOpeningIO` replays the frozen opening answer. That answer is the controlled
 stimulus of the whole experiment, so it is served from the file rather than retyped - a
-re-typed opening is a different opening, and the comparison across the eleven runs would
+re-typed opening is a different opening, and the comparison across the ladder would
 no longer hold.
 """
 
@@ -11,6 +11,9 @@ from __future__ import annotations
 import asyncio
 import sys
 import time
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
@@ -20,16 +23,16 @@ from rich.panel import Panel
 from rich.text import Text
 
 from solution.adapters.session_store import SessionStore
+from solution.application.opening_answer import freeze as freeze_opening
 from solution.application.runner import CandidateIO
 from solution.domain.transcript import Answer
 
 _RULE = "-" * 72
 _WIDTH = 88
 
-# The candidate types in green; the interviewer speaks in yellow.
 _ANSWER_STYLE = Style.from_dict(
     {
-        "": "ansigreen",  # what the candidate types
+        "": "ansigreen",
         "bottom-toolbar": "noreverse ansiblack bg:ansiwhite",
     }
 )
@@ -40,19 +43,37 @@ def _clock(seconds: float) -> str:
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
+def waiting_message(elapsed_seconds: float, total_seconds: float) -> str:
+    """The line shown while the model composes.
+
+    A function rather than an inline f-string so it can be tested: `rich` suppresses its
+    spinner outside a terminal, so driving the real console under pytest captures nothing
+    and would leave the clock arithmetic - the part that can actually be wrong - unpinned.
+    """
+    left = _clock(max(0.0, total_seconds - elapsed_seconds))
+    return (
+        f"[dim]composing the next question - about[/dim] [bold]{left}[/bold] "
+        "[dim]left of the interview[/dim]"
+    )
+
+
 class ConsoleIO(CandidateIO):
-    """Reads an answer with full line editing, a live countdown, and a hard deadline.
+    """Reads an answer with full line editing and a live view of the interview clock.
 
-    prompt_toolkit owns the event loop, which makes all three possible at once. A plain
-    `input()` could offer none of them: it blocks, so no countdown can repaint and no
-    timer can interrupt it. Every earlier compromise here came from that limitation, not
-    from a design preference.
+    **There is no per-answer limit.** The answer ends when the candidate submits it. The
+    interview this models is spoken, and a spoken interview advances when the candidate
+    stops talking - not when a timer fires. A typed deadline was a translation artefact:
+    under a cap, answers crowd up against it, which is a candidate writing against a clock
+    rather than answering a question.
 
-    At the deadline the prompt is closed and **whatever has been typed becomes the
-    answer**. That keeps the rule the candidate specified - an answer not submitted in
-    time does not stop the interview - while removing a confound it would otherwise
-    leave: if answers were allowed to run long, they would lengthen across iterations,
-    shorten the interviews and depress coverage for a reason that is not the interviewer.
+    prompt_toolkit still owns the event loop, because the interview clock in the toolbar
+    has to repaint while the candidate types and a plain `input()` blocks.
+
+    **What removing the cap costs.** Answers can now lengthen from one run to the next,
+    which shortens the interviews and would depress coverage for a reason that is not the
+    interviewer. That confound is not prevented any more - it is measured instead: every
+    run reports its answer durations, and `interview report` puts them beside coverage so
+    a reader can tell the two explanations apart.
     """
 
     def __init__(self) -> None:
@@ -64,9 +85,25 @@ class ConsoleIO(CandidateIO):
         self._elapsed = elapsed_seconds
         self._total = total_seconds
 
+    @contextmanager
+    def waiting(self, elapsed_seconds: float, total_seconds: float):
+        """A spinner while the model writes, carrying the clock the toolbar cannot.
+
+        The interview countdown lives in the answer prompt, which does not exist yet at
+        this point in the turn - so without this the candidate watches a still terminal
+        for however long generation takes, with no way to tell thinking from hung.
+
+        The figure is the time left when generation *started*, and says "about" because of
+        it. A live count would need a thread repainting the terminal underneath rich, for
+        an accuracy nobody is served by: the number moves by the length of one generation,
+        and the exact count returns the moment the candidate starts typing.
+        """
+        with self._console.status(
+            waiting_message(elapsed_seconds, total_seconds), spinner="dots"
+        ):
+            yield
+
     def present(self, text: str) -> None:
-        # markup=False: a question may legitimately contain square brackets, and rich
-        # would otherwise read them as styling tags and swallow them.
         self._console.print()
         self._console.print(
             Panel(
@@ -77,71 +114,56 @@ class ConsoleIO(CandidateIO):
             )
         )
 
-    def _toolbar(self, started: float, deadline_seconds: int):
+    def _toolbar(self, started: float):
+        """The interview clock only. There is no answer clock to show any more.
+
+        Colour tracks how much of the *interview* is left, so it says something about the
+        session rather than hurrying the sentence being written.
+        """
+
         def render() -> HTML:
-            spent = time.perf_counter() - started
-            answer_left = max(0.0, deadline_seconds - spent)
-            if answer_left > 45:
-                colour = "ansigreen"
-            elif answer_left > 15:
-                colour = "ansiyellow"
-            else:
-                colour = "ansired"
-            parts = [
-                f' this answer <style fg="{colour}"><b>{_clock(answer_left)}</b></style>',
-            ]
+            parts = []
             if self._total:
+                spent = time.perf_counter() - started
                 remaining = max(0.0, self._total - self._elapsed - spent)
-                parts.append(f"interview {_clock(remaining)} left")
+                if remaining > 300:
+                    colour = "ansigreen"
+                elif remaining > 120:
+                    colour = "ansiyellow"
+                else:
+                    colour = "ansired"
+                parts.append(
+                    f' interview <style fg="{colour}"><b>{_clock(remaining)}</b></style> left'
+                )
+            parts.append("take your time")
             parts.append("Enter submits")
             return HTML("   |   ".join(parts) + " ")
 
         return render
 
-    async def _read_with_deadline(self, deadline_seconds: int) -> tuple[str, bool]:
-        """Return (text, was_cut). At the deadline the prompt closes and keeps the draft."""
+    async def _read(self) -> str:
+        """Wait for the candidate to submit. Nothing here ends the answer but them."""
         session: PromptSession[str] = PromptSession()
         started = time.perf_counter()
-        was_cut = False
-
-        async def cut() -> None:
-            nonlocal was_cut
-            await asyncio.sleep(deadline_seconds)
-            was_cut = True
-            application = session.app
-            if application.is_running:
-                application.exit(result=session.default_buffer.text)
-
-        timer = asyncio.ensure_future(cut())
         try:
-            text = await session.prompt_async(
+            return await session.prompt_async(
                 "> ",
                 style=_ANSWER_STYLE,
-                bottom_toolbar=self._toolbar(started, deadline_seconds),
+                bottom_toolbar=self._toolbar(started),
                 refresh_interval=0.5,
             )
         except EOFError:
-            text = ""
-        finally:
-            timer.cancel()
-        return text, was_cut
+            return ""
 
-    def collect(self, deadline_seconds: int) -> Answer:
+    def collect(self) -> Answer:
         started = time.perf_counter()
 
         if not sys.stdin.isatty():
-            # No terminal to draw a toolbar on. Degrade to a plain read rather than crash.
-            text, was_cut = sys.stdin.readline().rstrip("\n"), False
+            text = sys.stdin.readline().rstrip("\n")
         else:
-            text, was_cut = asyncio.run(self._read_with_deadline(deadline_seconds))
+            text = asyncio.run(self._read())
 
-        elapsed = min(time.perf_counter() - started, float(deadline_seconds))
-        if was_cut:
-            self._console.print(
-                f"[dim]{_clock(deadline_seconds)} reached - "
-                f"kept what you had written and moved on[/dim]"
-            )
-        return Answer(text=text.strip(), seconds_used=elapsed, over_deadline=was_cut)
+        return Answer(text=text.strip(), seconds_used=time.perf_counter() - started)
 
 
 class FrozenOpeningIO(CandidateIO):
@@ -166,9 +188,20 @@ class FrozenOpeningIO(CandidateIO):
     def note_progress(self, elapsed_seconds: float, total_seconds: float) -> None:
         self._inner.note_progress(elapsed_seconds, total_seconds)
 
-    def collect(self, deadline_seconds: int) -> Answer:
+    @contextmanager
+    def waiting(self, elapsed_seconds: float, total_seconds: float):
+        """Delegated, or the wrapper silently swallows the spinner.
+
+        Both wrappers exist to intercept exactly one turn; every other presentation
+        concern belongs to the console underneath. Inheriting the no-op default here is
+        how a live run ends up with no indicator at all while still passing every test.
+        """
+        with self._inner.waiting(elapsed_seconds, total_seconds):
+            yield
+
+    def collect(self) -> Answer:
         if self._served:
-            return self._inner.collect(deadline_seconds)
+            return self._inner.collect()
 
         self._served = True
         if self._store is not None:
@@ -182,11 +215,94 @@ class FrozenOpeningIO(CandidateIO):
                 padding=(1, 2),
             )
         )
-        return Answer(
-            text=self._opening_text,
-            seconds_used=self._opening_seconds,
-            over_deadline=False,
+        return Answer(text=self._opening_text, seconds_used=self._opening_seconds)
+
+
+class CapturingOpeningIO(CandidateIO):
+    """Collects the opening answer live and freezes it, then defers to the wrapped IO.
+
+    The counterpart to `FrozenOpeningIO`, used exactly once: on the baseline run of an
+    experiment that has no frozen opening yet. The candidate answers the first question as
+    they would answer any other, and that answer becomes the stimulus every later run
+    replays.
+
+    Writing it here rather than printing it for someone to paste is deliberate. The frozen
+    text is then character-for-character what was typed under the 120-second clock, with no
+    step in between where it could be tidied up - and a tidied opening is a different
+    experiment from the one that was actually run.
+    """
+
+    def __init__(
+        self,
+        inner: CandidateIO,
+        target: Path,
+        iteration: int,
+        store: SessionStore | None = None,
+        replacing: bool = False,
+    ) -> None:
+        self._inner = inner
+        self._target = Path(target)
+        self._iteration = iteration
+        self._store = store
+        self._replacing = replacing
+        self._captured = False
+        self._replaced: str | None = None
+
+    @property
+    def captured(self) -> bool:
+        return self._captured
+
+    @property
+    def replaced(self) -> str | None:
+        """The answer this one displaced, if it displaced one."""
+        return self._replaced
+
+    def present(self, text: str) -> None:
+        self._inner.present(text)
+
+    def note_progress(self, elapsed_seconds: float, total_seconds: float) -> None:
+        self._inner.note_progress(elapsed_seconds, total_seconds)
+
+    @contextmanager
+    def waiting(self, elapsed_seconds: float, total_seconds: float):
+        """Delegated, or the wrapper silently swallows the spinner.
+
+        Both wrappers exist to intercept exactly one turn; every other presentation
+        concern belongs to the console underneath. Inheriting the no-op default here is
+        how a live run ends up with no indicator at all while still passing every test.
+        """
+        with self._inner.waiting(elapsed_seconds, total_seconds):
+            yield
+
+    def collect(self) -> Answer:
+        answer = self._inner.collect()
+        if self._captured:
+            return answer
+
+        if not answer.text.strip():
+            return answer
+
+        _, self._replaced = freeze_opening(
+            self._target,
+            answer.text,
+            iteration=self._iteration,
+            captured_at=datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            replacing=self._replacing,
         )
+        self._captured = True
+        if self._store is not None:
+            self._store.append(
+                "opening_answer_frozen",
+                path=str(self._target),
+                characters=len(answer.text.strip()),
+                replaced=self._replaced,
+            )
+        console = Console(width=_WIDTH)
+        console.print(
+            f"[dim]opening answer frozen to {self._target.name} - "
+            f"every later run replays exactly this[/dim]"
+        )
+        return answer
 
 
 class SmokeIO(CandidateIO):
@@ -200,9 +316,9 @@ class SmokeIO(CandidateIO):
     """
 
     ANSWERS = (
-        "[smoke placeholder] I did that at Thoughtworks, in TypeScript and Node.js.",
+        "[smoke placeholder] I did that at Company X, in TypeScript and Node.js.",
         "[smoke placeholder] Mostly on AWS - Lambda, SQS and Cognito.",
-        "[smoke placeholder] At Accenture, in Python, with SQL behind it.",
+        "[smoke placeholder] At Company Y, in Python, with SQL behind it.",
         "[smoke placeholder] I have not done that one hands-on.",
     )
 
@@ -214,7 +330,7 @@ class SmokeIO(CandidateIO):
         self.questions.append(text)
         print(f"\n{_RULE}\nINTERVIEWER  ({len(self.questions)})\n{_RULE}\n{text}")
 
-    def collect(self, deadline_seconds: int) -> Answer:
+    def collect(self) -> Answer:
         answer = self.ANSWERS[(len(self.questions) - 1) % len(self.ANSWERS)]
         print(f"\nCANNED ANSWER ({self.seconds_per_answer:.0f}s of the budget)\n{answer}")
-        return Answer(text=answer, seconds_used=self.seconds_per_answer, over_deadline=False)
+        return Answer(text=answer, seconds_used=self.seconds_per_answer)

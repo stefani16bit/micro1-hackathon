@@ -1,11 +1,11 @@
-"""The turn loop is shared by all eleven iterations. Only the interviewer is swapped, so
+"""The turn loop is shared by every iteration. Only the interviewer is swapped, so
 every fairness property the comparison depends on is tested once, here."""
 
 from solution.application.runner import CandidateIO, Interviewer, run_interview
 from solution.domain.models import TimeBudget
 from solution.domain.transcript import Answer, Transcript, Utterance
 
-BUDGET = TimeBudget(total_seconds=300, answer_deadline_seconds=120, turn_overhead_seconds=15)
+BUDGET = TimeBudget(total_seconds=300, expected_answer_seconds=120, turn_overhead_seconds=15)
 
 
 class ScriptedInterviewer(Interviewer):
@@ -28,18 +28,16 @@ class ScriptedIO(CandidateIO):
         self._queue = list(answers)
         self._default = default
         self.presented: list[str] = []
-        self.deadlines: list[int] = []
 
     def present(self, text: str) -> None:
         self.presented.append(text)
 
-    def collect(self, deadline_seconds: int) -> Answer:
-        self.deadlines.append(deadline_seconds)
+    def collect(self) -> Answer:
         if self._queue:
             return self._queue.pop(0)
         if self._default is not None:
             return self._default
-        return Answer(text="", seconds_used=0.0, over_deadline=True)
+        return Answer(text="", seconds_used=0.0)
 
 
 def question(text: str = "Tell me about your backend work?") -> Utterance:
@@ -71,8 +69,8 @@ def test_stops_when_the_interviewer_has_nothing_left_to_ask(tmp_path, store_fact
     assert len(outcome.transcript.questions) == 1
 
 
-def test_never_issues_a_turn_the_remaining_time_cannot_honour(tmp_path, store_factory):
-    """300 s of budget at 135 s per turn leaves room for two, not three."""
+def test_asks_no_further_question_once_the_budget_is_spent(tmp_path, store_factory):
+    """300 s of budget and 120 s answers: the third turn is never started."""
     outcome = run_interview(
         interviewer=ScriptedInterviewer(question(), repeat_last=True),
         io=ScriptedIO(default=Answer("...", 120.0)),
@@ -81,32 +79,32 @@ def test_never_issues_a_turn_the_remaining_time_cannot_honour(tmp_path, store_fa
         clock=lambda: 0.0,
     )
     assert outcome.end_reason == "time_exhausted"
-    assert len(outcome.transcript.questions) == 2
+    assert len(outcome.transcript.questions) == 3
+    assert outcome.transcript.elapsed_seconds >= BUDGET.total_seconds
 
 
-def test_always_offers_the_full_answer_deadline(tmp_path, store_factory):
-    """D6: the interview shortens when time runs short; the candidate's turn never does."""
-    io = ScriptedIO(default=Answer("...", 120.0))
-    run_interview(
-        interviewer=ScriptedInterviewer(question(), repeat_last=True),
-        io=io,
-        store=store_factory(tmp_path),
-        budget=BUDGET,
-        clock=lambda: 0.0,
-    )
-    assert io.deadlines == [120, 120]
-
-
-def test_a_timed_out_answer_does_not_end_the_interview(tmp_path, store_factory):
+def test_an_answer_already_under_way_may_run_past_the_budget(tmp_path, store_factory):
+    """The check is at the turn boundary, so nothing is cut off mid-sentence. An interview
+    that ends slightly over is a better artifact than one that truncates a candidate."""
     outcome = run_interview(
-        interviewer=ScriptedInterviewer(question("First?"), question("Second?")),
-        io=ScriptedIO(Answer("", 120.0, over_deadline=True), Answer("Second answer.", 30.0)),
+        interviewer=ScriptedInterviewer(question(), repeat_last=True),
+        io=ScriptedIO(default=Answer("a very long answer", 400.0)),
         store=store_factory(tmp_path),
         budget=BUDGET,
         clock=lambda: 0.0,
     )
-    assert len(outcome.transcript.questions) == 2
-    assert outcome.transcript.answers[0].over_deadline is True
+    assert outcome.transcript.answers[0].seconds == 400.0
+    assert outcome.transcript.elapsed_seconds > BUDGET.total_seconds
+    assert len(outcome.transcript.questions) == 1
+
+
+def test_the_candidates_turn_is_never_limited(tmp_path, store_factory):
+    """There is no argument by which the loop could impose one."""
+    import inspect
+
+    from solution.application.runner import CandidateIO as Port
+
+    assert list(inspect.signature(Port.collect).parameters) == ["self"]
 
 
 def test_persists_every_turn_as_it_happens(tmp_path, store_factory):
@@ -134,5 +132,83 @@ def test_elapsed_time_counts_the_interviewer_thinking_as_well_as_the_answering(
         budget=BUDGET,
         clock=lambda: next(ticks),
     )
-    # two questions costing 20 s of generation each, two answers of 30 s
     assert outcome.transcript.elapsed_seconds == 100.0
+
+
+class ComposingInterviewer(ScriptedInterviewer):
+    """Records when the loop offered it the chance to compose ahead."""
+
+    may_compose_ahead = True
+
+    def __init__(self, *utterances):
+        super().__init__(*utterances)
+        self.composed_after: list[int] = []
+
+    def compose_ahead(self, transcript: Transcript) -> None:
+        self.composed_after.append(len(transcript.questions))
+
+
+class FinishedInterviewer(Interviewer):
+    label = "finished"
+
+    def next_utterance(self, transcript: Transcript):
+        return None
+
+    def stopped_because(self) -> str:
+        return "all_slots_covered"
+
+
+def test_only_an_interviewer_that_may_compose_ahead_is_asked_to(tmp_path, store_factory):
+    """The baseline is handed the transcript every turn, so its next question cannot
+    exist before the answer does. The loop must not offer it the chance anyway."""
+    plain = ScriptedInterviewer(question(), question())
+    run_interview(
+        interviewer=plain,
+        io=ScriptedIO(default=Answer("...", 30.0)),
+        store=store_factory(tmp_path),
+        budget=BUDGET,
+        clock=lambda: 0.0,
+    )
+    assert not hasattr(plain, "composed_after")
+    assert plain.may_compose_ahead is False
+
+
+def test_composing_ahead_happens_after_the_question_and_before_the_answer(
+    tmp_path, store_factory
+):
+    interviewer = ComposingInterviewer(question("First?"), question("Second?"))
+    run_interview(
+        interviewer=interviewer,
+        io=ScriptedIO(default=Answer("...", 30.0)),
+        store=store_factory(tmp_path),
+        budget=BUDGET,
+        clock=lambda: 0.0,
+    )
+    assert interviewer.composed_after == [1, 2]
+
+
+def test_the_record_says_whether_the_interviewer_composed_ahead(tmp_path, store_factory):
+    """A run where the wait was hidden and one where it was paid are different runs."""
+    store = store_factory(tmp_path)
+    run_interview(
+        interviewer=ComposingInterviewer(question()),
+        io=ScriptedIO(Answer("An answer.", 45.0)),
+        store=store,
+        budget=BUDGET,
+        clock=lambda: 0.0,
+    )
+    started = next(e for e in store.events() if e.type == "interview_started")
+    assert started.data["composes_ahead"] is True
+
+
+def test_the_interviewer_says_why_it_stopped(tmp_path, store_factory):
+    """The scheduler knows it ran out of time; the loop used to record every stop as
+    `interviewer_finished` and throw that away."""
+    outcome = run_interview(
+        interviewer=FinishedInterviewer(),
+        io=ScriptedIO(),
+        store=store_factory(tmp_path),
+        budget=BUDGET,
+        clock=lambda: 0.0,
+    )
+    assert outcome.end_reason == "all_slots_covered"

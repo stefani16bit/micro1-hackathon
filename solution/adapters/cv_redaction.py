@@ -7,7 +7,7 @@ the parser downstream cannot read them either.
 Kept deliberately: name, public professional profiles, and the entire professional
 history. The candidate is the author of this project and signs their own work; what has
 no place in a public repository is a personal phone number and email address
-(CLAUDE.md ground rule 8).
+(agentic-workflows.md ground rule 8).
 
 The digest of the source file is written into the redacted PDF's metadata. That is what
 lets the preflight notice a swapped CV: the redacted file carries the identity of the
@@ -23,10 +23,9 @@ from pathlib import Path
 
 import pymupdf
 
-# Patterns for direct contact details. Anything matching is removed from the text layer.
 PATTERNS = (
-    re.compile(r"\+?\d[\d\s()\-]{8,}\d"),  # phone numbers
-    re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),  # email addresses
+    re.compile(r"\+?\d[\d\s()\-]{8,}\d"),
+    re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
 )
 
 _SOURCE_KEY = "source-sha256="
@@ -48,7 +47,7 @@ def recorded_source_digest(redacted: Path | str) -> str | None:
     try:
         with pymupdf.open(path) as document:
             keywords = (document.metadata or {}).get("keywords") or ""
-    except Exception:  # a corrupt or unreadable file is simply unidentified
+    except Exception:
         return None
     for part in keywords.split():
         if part.startswith(_SOURCE_KEY):
