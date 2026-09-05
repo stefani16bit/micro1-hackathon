@@ -307,8 +307,9 @@ prompt_toolkit and rich for the console interview, PyYAML, httpx, and pytest. Th
 through the Claude Code CLI or a local Ollama server; no hosted AI API is called anywhere, and there
 is no API key in this project.
 
-The un-redacted CV is never committed. The committed copy has contact details deleted from the PDF's
-text layer — not covered with a rectangle — and its employers and university anonymised by hand.
+No CV is committed, redacted or not. `evals/cases/case-01/cv.pdf` is derived: `interview prepare`
+rebuilds it from a `cv-original.pdf` that never enters the repository, deleting contact details from
+the PDF's text layer rather than covering them with a rectangle.
 
 ---
 

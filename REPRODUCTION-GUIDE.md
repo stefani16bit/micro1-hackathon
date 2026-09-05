@@ -289,15 +289,18 @@ a sitting, and never a measurement.
 | `roles/fullstack/role.txt` | a real micro1 Full Stack Developer posting, with its source URL | yes |
 | `roles/fullstack/slots.yaml` | the frozen six-competency plan, and the raw model output it was reviewed from | yes |
 | `evals/cases/case-01/cv-original.pdf` | the candidate's CV | **no** — never committed |
-| `evals/cases/case-01/cv.pdf` | the redacted CV the interview reads | yes |
+| `evals/cases/case-01/cv.pdf` | the redacted CV the interview reads | **no** — rebuilt by `interview prepare` |
 | `evals/cases/case-01/opening-answer.md` | the frozen controlled stimulus | yes |
 | `evals/cases/case-01/response-brief.md` | the answer corpus, transcribed from the transcripts | yes |
 | `evals/results/` | every run, raw, never hand-edited | yes |
 | `trajectories/` | one record per agent, with full prompts | yes |
 
-The committed `cv.pdf` is anonymised beyond the phone number and email the redaction strips:
-employers read *Company X* and *Company Y*, the university *University Name*. It is a real CV with
-real work history, and it is what the interviewer reads.
+Neither CV is committed. `cv.pdf` is a derived artifact: `interview prepare` rebuilds it from
+`cv-original.pdf`, stripping the phone number and email from the text layer. The author's copy is
+anonymised beyond that — employers read *Company X* and *Company Y*, the university *University
+Name* — but it is a real CV with real work history, so it stays out of a public repository. Every
+digest the experiment lock records is over content, not over a committed file, so nothing about
+reproduction changes: supply your own `cv-original.pdf` and run `interview prepare`.
 
 ---
 

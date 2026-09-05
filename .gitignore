@@ -6,7 +6,7 @@ __pycache__/
 
 # Personal data: the un-redacted CV never enters the repository (ground rule 8).
 evals/cases/**/*.pdf
-!evals/cases/**/cv.pdf
+evals/cases/**/cv.pdf
 
 # The Zara paper is freely available from arXiv; redistributing a third party PDF is an
 # avoidable licensing question. research/sources.md carries the quotations instead.
