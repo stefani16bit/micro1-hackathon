@@ -8,5 +8,6 @@ __pycache__/
 evals/cases/**/*.pdf
 !evals/cases/**/cv.pdf
 
-# Third-party paper: freely available at arxiv.org/abs/2507.02869, not redistributed here.
+# The Zara paper is freely available from arXiv; redistributing a third party PDF is an
+# avoidable licensing question. research/sources.md carries the quotations instead.
 zara-paper.pdf

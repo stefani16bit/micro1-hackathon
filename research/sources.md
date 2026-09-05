@@ -10,8 +10,8 @@ repo, and verify them against the original.
 
 ## 1. The Zara paper
 
-> Yazdani, N., Mahajan, A., & Ansari, A. (2025). *Zara: An LLM-based Candidate Interview Feedback
-> System.* arXiv:2507.02869 [cs.HC].
+> Yazdani, N., Mahajan, A., & Ansari, A. (2025). _Zara: An LLM-based Candidate Interview Feedback
+> System._ arXiv:2507.02869 [cs.HC].
 > <https://arxiv.org/abs/2507.02869>
 
 ### Quotations this project relies on
@@ -41,10 +41,10 @@ is written from:
 
 **On the published metrics** (§5.1, Usage Metrics and Candidate Engagement):
 
-| Metric | Human-led | Previous system | Zara |
-|---|---:|---:|---:|
-| Technical question quality | 7.78 | 8.38 | 8.60 |
-| Conversational dynamics | 5.49 | 7.77 | 8.27 |
+| Metric                     | Human-led | Previous system | Zara |
+| -------------------------- | --------: | --------------: | ---: |
+| Technical question quality |      7.78 |            8.38 | 8.60 |
+| Conversational dynamics    |      5.49 |            7.77 | 8.27 |
 
 > "Candidate satisfaction with the AI-led interview experience was measured through Net Promoter
 > Score (NPS). Based on 400 candidate ratings, Zara-enabled AI interviews received an average NPS
@@ -57,8 +57,10 @@ is the gap this project addresses.
 
 > "There were 4820 'unsuccessful' interviews conducted, of which 10.7% requested detailed feedback."
 
-Measured over a three-day window — roughly 1,600 screening interviews per day, of which 89.3% of
-the unsuccessful candidates never requested the feedback that would tell them why.
+Measured over a three-day window. That is on the order of 1,600 **unsuccessful** interviews per
+day; the paper does not publish the total screening volume, so the real figure is higher by an
+unknown amount. 89.3% of those unsuccessful candidates never requested the feedback that would
+tell them why.
 
 **On the feedback output contract** (§4.1) — the shape `InterviewReport` stays compatible with:
 
@@ -73,7 +75,7 @@ communication" — the reason this project produces no behavioural score either.
 
 ## 2. The evaluation role
 
-> micro1 public job board, *Full Stack Developer*, posted 2026-08-14, retrieved 2026-08-29.
+> micro1 public job board, _Full Stack Developer_, posted 2026-08-14, retrieved 2026-08-29.
 > <https://jobs.micro1.ai/post/e4af7669-a52f-4f24-95f4-621259887aef>
 
 Reproduced in `roles/fullstack/role.txt` with its source header. It is a genuine open micro1
@@ -87,15 +89,35 @@ by the system this project examines.
 The operational rules in `research/interview-guidance.md` are grounded in the structured-interview
 literature. That file carries its own caveat: several figures come from indexed excerpts rather
 than full readings. **Any figure quoted in the README must be re-verified against the primary
-source first** (CLAUDE.md ground rule 9). The sources it cites:
+source first** (agentic-workflows.md ground rule 9). The sources it cites:
 
-- U.S. Office of Personnel Management (2008). *Structured Interviews: A Practical Guide.*
+- U.S. Office of Personnel Management (2008). _Structured Interviews: A Practical Guide._
 - Campion, M., Palmer, D., & Campion, J. (1997). A review of structure in the selection interview.
-  *Personnel Psychology*, 50(3).
+  _Personnel Psychology_, 50(3).
 - Sackett, P. et al. (2022). Revisiting meta-analytic estimates of validity in personnel selection.
-  *Journal of Applied Psychology.*
+  _Journal of Applied Psychology._
 - Levashina, J. et al. (2014). The structured employment interview: narrative and quantitative
-  review. *Personnel Psychology*, 67(1).
-- Behroozi, M. et al. (2020). Does stress impact technical interview performance? *ESEC/FSE 2020.*
+  review. _Personnel Psychology_, 67(1).
+- Behroozi, M. et al. (2020). Does stress impact technical interview performance? _ESEC/FSE 2020._
 - Kong, H. et al. (2024). Gender bias in LLM-generated interview responses. arXiv:2410.20739.
   (Cited by the Zara paper itself.)
+
+---
+
+## 4. Candidate reports
+
+Four accounts from candidates who sat the interview, transcribed in
+[`research/evidence/candidate-reports.md`](evidence/candidate-reports.md) with the thread permalink
+and every quote reproduced verbatim.
+
+**They are motivation, never measurement**, and that file states the four limits plainly rather
+than in a footnote: self-selected posters, n = 4, roles other than this project's evaluation role,
+and quotes transcribed from screenshots because Reddit blocks automated fetching and its public
+JSON API returns 404 (verified against a control subreddit, so it is the route rather than the
+subreddit). No count, rate or proportion is derived from them anywhere in this repository.
+
+They earn their place for one reason: they describe a failure that is *not* the one this project
+originally set out to catch. Nobody in the thread says a competency went unasked. They say the
+interview kept going deeper into one — *"turns it into the same question with an additional detail
+added"*, *"every question seemed to one-up the last"* — which is a property of how the time was
+allocated, and it is what `PREREGISTRATION.md` §2a adds instruments for.
