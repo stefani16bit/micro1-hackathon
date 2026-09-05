@@ -1,0 +1,152 @@
+{
+  "samples_per_question": 5,
+  "questions": 11,
+  "mean_distinct_labels": 1.18,
+  "max_distinct_labels": 2,
+  "unanimous_questions": 9,
+  "detail": [
+    {
+      "question": 1,
+      "labels": [
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging"
+      ],
+      "distinct": 1,
+      "modal": "cross_boundary_debugging",
+      "modal_share": 1.0
+    },
+    {
+      "question": 2,
+      "labels": [
+        "backend",
+        "backend",
+        "api_contract",
+        "backend",
+        "api_contract"
+      ],
+      "distinct": 2,
+      "modal": "backend",
+      "modal_share": 0.6
+    },
+    {
+      "question": 3,
+      "labels": [
+        "api_contract",
+        "api_contract",
+        "api_contract",
+        "backend",
+        "backend"
+      ],
+      "distinct": 2,
+      "modal": "api_contract",
+      "modal_share": 0.6
+    },
+    {
+      "question": 4,
+      "labels": [
+        "api_contract",
+        "api_contract",
+        "api_contract",
+        "api_contract",
+        "api_contract"
+      ],
+      "distinct": 1,
+      "modal": "api_contract",
+      "modal_share": 1.0
+    },
+    {
+      "question": 5,
+      "labels": [
+        "data_layer",
+        "data_layer",
+        "data_layer",
+        "data_layer",
+        "data_layer"
+      ],
+      "distinct": 1,
+      "modal": "data_layer",
+      "modal_share": 1.0
+    },
+    {
+      "question": 6,
+      "labels": [
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend"
+      ],
+      "distinct": 1,
+      "modal": "frontend",
+      "modal_share": 1.0
+    },
+    {
+      "question": 7,
+      "labels": [
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend"
+      ],
+      "distinct": 1,
+      "modal": "frontend",
+      "modal_share": 1.0
+    },
+    {
+      "question": 8,
+      "labels": [
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend"
+      ],
+      "distinct": 1,
+      "modal": "frontend",
+      "modal_share": 1.0
+    },
+    {
+      "question": 9,
+      "labels": [
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend",
+        "frontend"
+      ],
+      "distinct": 1,
+      "modal": "frontend",
+      "modal_share": 1.0
+    },
+    {
+      "question": 10,
+      "labels": [
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging"
+      ],
+      "distinct": 1,
+      "modal": "cross_boundary_debugging",
+      "modal_share": 1.0
+    },
+    {
+      "question": 11,
+      "labels": [
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging",
+        "cross_boundary_debugging"
+      ],
+      "distinct": 1,
+      "modal": "cross_boundary_debugging",
+      "modal_share": 1.0
+    }
+  ]
+}

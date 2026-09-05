@@ -1,0 +1,259 @@
+<title>The Interview That Cannot Tunnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+:root{--ground:#F4F6F8;--surface:#FFFFFF;--surface2:#EAEEF3;--ink:#141920;--muted:#5C6675;
+--rule:#D8DEE6;--accent:#1F5FA9;--drift:#B4402A;--ok:#14746F;
+--shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.05);}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#0F1318;--surface:#161B22;
+--surface2:#1C222B;--ink:#E6EAF0;--muted:#98A3B2;--rule:#2A313C;--accent:#6BA6E8;--drift:#E4795F;
+--ok:#4FB6A8;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);}}
+:root[data-theme="dark"]{--ground:#0F1318;--surface:#161B22;--surface2:#1C222B;--ink:#E6EAF0;
+--muted:#98A3B2;--rule:#2A313C;--accent:#6BA6E8;--drift:#E4795F;--ok:#4FB6A8;
+--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:52px 24px 90px;display:flex;flex-direction:column;gap:54px}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif;text-wrap:balance;margin:0;letter-spacing:-.012em}
+h1{font-size:clamp(29px,4.3vw,45px);line-height:1.13;font-weight:600}
+h2{font-size:26px;font-weight:600}
+h3{font-size:17.5px;font-weight:600}
+p{margin:0;max-width:68ch}
+.mono,.num,td.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:18.5px;color:var(--muted);max-width:64ch}
+section{display:flex;flex-direction:column;gap:20px}
+.sechead{display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--ink);padding-top:14px}
+header.top{display:flex;flex-direction:column;gap:16px}
+.statusbar{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font-family:"IBM Plex Mono",monospace;font-size:11.5px;padding:4px 10px;border-radius:2px;
+background:var(--surface2);color:var(--muted);border:1px solid var(--rule)}
+.pill.hot{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--rule))}
+.runs{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:880px){.runs{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:22px;
+box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+.panel h3{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.panel h3 small{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:400;color:var(--muted);
+letter-spacing:.09em;text-transform:uppercase}
+.tape{display:flex;gap:3px}
+.cell{flex:1;height:54px;background:var(--c);border-radius:2px;display:flex;align-items:flex-end;
+justify-content:center;padding-bottom:5px}
+.cn{font-family:"IBM Plex Mono",monospace;font-size:10px;color:#fff;opacity:.85}
+.legend{display:flex;flex-wrap:wrap;gap:6px 15px;font-size:12.5px;color:var(--muted)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.lg.off{opacity:.6}
+.lg.off i{background:transparent;border:1px dashed var(--muted)}
+.lg em{color:var(--drift);font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:11px}
+.readout{display:flex;flex-wrap:wrap;gap:20px;padding-top:6px;border-top:1px solid var(--rule)}
+.ro{display:flex;flex-direction:column}
+.ro b{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.ro span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.ro.bad b{color:var(--drift)}
+.ro.good b{color:var(--ok)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--rule);vertical-align:middle}
+th{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+color:var(--muted);font-weight:500}
+td.n,th.n{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:3px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:8px;vertical-align:-1px}
+.barcell{white-space:nowrap}
+.bar{display:inline-block;height:11px;width:var(--w);background:var(--c);border-radius:1px;margin-right:8px}
+.barcell b{font-family:"IBM Plex Mono",monospace;font-weight:500}
+.zero{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--drift);margin-right:8px}
+.win{color:var(--ok);font-weight:600}
+.lose{color:var(--drift);font-weight:600}
+.qs{display:flex;flex-direction:column;gap:9px}
+.q{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--c);border-radius:3px;
+padding:13px 17px;display:flex;flex-direction:column;gap:6px}
+.q header{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.q .num{font-size:11.5px;color:var(--muted);font-weight:500;font-family:"IBM Plex Mono",monospace}
+.q .slot{font-size:12px;font-weight:600;color:var(--c)}
+.q p{font-size:14.5px;max-width:none}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:10.5px;padding:2px 7px;border-radius:2px;letter-spacing:.03em}
+.chip.drift{background:color-mix(in srgb,var(--drift) 15%,transparent);color:var(--drift)}
+.chip.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.chip.kind{background:var(--surface2);color:var(--muted)}
+.chainmark{display:flex;gap:10px;padding:12px 16px;border-radius:3px;font-size:14px;
+background:color-mix(in srgb,var(--drift) 9%,var(--surface));
+border:1px solid color-mix(in srgb,var(--drift) 28%,var(--rule))}
+.chainmark.good{background:color-mix(in srgb,var(--ok) 9%,var(--surface));
+border-color:color-mix(in srgb,var(--ok) 28%,var(--rule))}
+.note{background:var(--surface2);border-left:3px solid var(--accent);padding:14px 18px;
+border-radius:0 3px 3px 0;font-size:14.5px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:880px){.cols{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:20px;
+display:flex;flex-direction:column;gap:9px;box-shadow:var(--shadow)}
+.card .eyebrow{color:var(--accent)}
+.card p{font-size:14.5px}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--rule);padding-top:18px;line-height:1.9}
+a{color:var(--accent)}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">micro1 hackathon &middot; evidence report</div>
+  <h1>One interview covered three subjects.<br>The other covered all six.</h1>
+  <p class="lede">Two recorded 25-minute screening interviews. Same candidate, same CV, same opening
+  answer, same model. The only thing that changed is who decides what gets asked next &mdash; the
+  model, or the code.</p>
+  <div class="statusbar">
+    <span class="pill">experiment 7c0d8c6dbd84</span>
+    <span class="pill">claude-sonnet-4-5-20250929</span>
+    <span class="pill">role: micro1 Full Stack Developer</span>
+    <span class="pill">6 competencies &middot; 25 minutes</span>
+    <span class="pill hot">every figure read from evals/results/</span>
+  </div>
+</header>
+
+<section>
+  <div class="sechead"><div class="eyebrow">the two runs, side by side</div>
+  <h2>Where the 25 minutes went</h2></div>
+  <p>Each block is one question, coloured by the competency it was asked about. Repeated colour means
+  the interview stayed put.</p>
+  <div class="runs">
+    <div class="panel">
+      <h3>Baseline <small>iteration 0 &middot; one prompt</small></h3>
+      <div class="tape"><div class="cell" style="--c:#B23A48" title="cross-boundary debugging"><span class="cn">1</span></div><div class="cell" style="--c:#B5762A" title="the API contract"><span class="cn">2</span></div><div class="cell" style="--c:#7B4BA8" title="backend development"><span class="cn">3</span></div><div class="cell" style="--c:#B5762A" title="the API contract"><span class="cn">4</span></div><div class="cell" style="--c:#157A6E" title="the data layer"><span class="cn">5</span></div><div class="cell" style="--c:#2F6FB5" title="frontend development"><span class="cn">6</span></div><div class="cell" style="--c:#2F6FB5" title="frontend development"><span class="cn">7</span></div><div class="cell" style="--c:#2F6FB5" title="frontend development"><span class="cn">8</span></div><div class="cell" style="--c:#2F6FB5" title="frontend development"><span class="cn">9</span></div><div class="cell" style="--c:#B23A48" title="cross-boundary debugging"><span class="cn">10</span></div><div class="cell" style="--c:#B23A48" title="cross-boundary debugging"><span class="cn">11</span></div></div>
+      <div class="legend"><span class="lg"><i style="background:#2F6FB5"></i>frontend development</span><span class="lg"><i style="background:#7B4BA8"></i>backend development</span><span class="lg"><i style="background:#B5762A"></i>the API contract</span><span class="lg"><i style="background:#157A6E"></i>the data layer</span><span class="lg"><i style="background:#B23A48"></i>cross-boundary debugging</span><span class="lg off"><i></i>code quality &amp; review <em>never asked</em></span></div>
+      <div class="readout">
+        <div class="ro bad"><b>5/6</b><span>coverage</span></div>
+        <div class="ro bad"><b>4</b><span>longest chain</span></div>
+        <div class="ro"><b>11</b><span>questions</span></div>
+        <div class="ro"><b>3</b><span>subjects</span></div>
+      </div>
+      <div class="chainmark">Q2&ndash;Q5 are one conversation about a single idempotency key. Q6&ndash;Q9
+      are one conversation about React Query retries. Two subjects, eight questions.</div>
+    </div>
+    <div class="panel">
+      <h3>Solution <small>the scheduler decides the topic</small></h3>
+      <div class="tape"><div class="cell" style="--c:#2F6FB5" title="frontend development"><span class="cn">1</span></div><div class="cell" style="--c:#2F6FB5" title="frontend development"><span class="cn">2</span></div><div class="cell" style="--c:#7B4BA8" title="backend development"><span class="cn">3</span></div><div class="cell" style="--c:#B5762A" title="the API contract"><span class="cn">4</span></div><div class="cell" style="--c:#157A6E" title="the data layer"><span class="cn">5</span></div><div class="cell" style="--c:#B23A48" title="cross-boundary debugging"><span class="cn">6</span></div><div class="cell" style="--c:#4F7A28" title="code quality &amp; review"><span class="cn">7</span></div></div>
+      <div class="legend"><span class="lg"><i style="background:#2F6FB5"></i>frontend development</span><span class="lg"><i style="background:#7B4BA8"></i>backend development</span><span class="lg"><i style="background:#B5762A"></i>the API contract</span><span class="lg"><i style="background:#157A6E"></i>the data layer</span><span class="lg"><i style="background:#B23A48"></i>cross-boundary debugging</span><span class="lg"><i style="background:#4F7A28"></i>code quality &amp; review</span></div>
+      <div class="readout">
+        <div class="ro good"><b>6/6</b><span>coverage</span></div>
+        <div class="ro good"><b>2</b><span>longest chain</span></div>
+        <div class="ro"><b>7</b><span>questions</span></div>
+        <div class="ro good"><b>6</b><span>subjects</span></div>
+      </div>
+      <div class="chainmark good">One primary question per competency, in the job posting's own order of
+      relevance, plus one follow-up where the clock allowed it. The ceiling of 2 is a property of the
+      code, not of this run.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sechead"><div class="eyebrow">baseline transcript &middot; iteration 0</div>
+  <h2>Every question the single prompt asked</h2></div>
+  <p>Labelled afterwards by a blind judge that sees one question and the competency list &mdash; never the
+  transcript, never which system wrote it. <span class="mono">carry-over</span> marks a question that
+  reached for a technology the candidate had raised, outside the competency being asked about.</p>
+  <div class="qs"><article class="q" style="--c:#B23A48"><header><span class="num">Q1</span><span class="slot">cross-boundary debugging</span><span class="chip drift">carry-over</span></header><p>That&#x27;s a solid background, Stefani. I&#x27;d like to dig deeper into your work at Company X since it sounds like the most technically complex environment you&#x27;ve worked in. You mentioned you developed and maintained payment microservices processing thousands of daily transactions. Can you walk me through a specific technical challenge you encountered in that work where you had to solve a problem that spanned both the frontend and backend? What was the issue, how did you approach it, and what was the solution?</p></article><article class="q" style="--c:#B5762A"><header><span class="num">Q2</span><span class="slot">the API contract</span></header><p>Good example - idempotency is critical for payment systems. Let me dig into the implementation details. Where exactly did you generate the idempotency key - was it on the frontend before making the API call, or on the backend when receiving the request? And once you had the key, how did you actually check for duplicates and prevent the race condition where two identical requests might arrive at nearly the same time?</p></article><article class="q" style="--c:#7B4BA8"><header><span class="num">Q3</span><span class="slot">backend development</span></header><p>I want to make sure I understand your implementation correctly. You said you generate the idempotency key after receiving the request on the backend. But if the key is generated server-side for each incoming request, how would two duplicate requests end up with the same idempotency key? Wouldn&#x27;t each request generate a different key?</p></article><article class="q" style="--c:#B5762A"><header><span class="num">Q4</span><span class="slot">the API contract</span></header><p>I think there&#x27;s a logical issue with what you&#x27;re describing. If the backend generates a new idempotency key for each incoming request, then duplicate requests would each get a different key, and your conditional write wouldn&#x27;t help - they&#x27;d all succeed because they&#x27;d all have different keys. For idempotency to work, duplicate requests need to arrive with the same key. So where does the idempotency key actually come from in your implementation? What are the inputs you use to generate it, and who generates it - the client or the server?</p></article><article class="q" style="--c:#157A6E"><header><span class="num">Q5</span><span class="slot">the data layer</span></header><p>That makes much more sense - deriving the key from a stable identifier like the transaction ID. Now let&#x27;s talk about the conditional write itself. What database were you using for this, and what specific database operation or feature did you use to implement the conditional write? And after the conditional write succeeds for the first request, walk me through what happens next - how do you ensure the first request completes the payment processing, stores the result, and how do subsequent duplicate requests retrieve that result instead of processing again?</p></article><article class="q" style="--c:#2F6FB5"><header><span class="num">Q6</span><span class="slot">frontend development</span><span class="chip drift">carry-over</span></header><p>Good explanation - that&#x27;s a solid idempotency pattern. You update the record with the final status after processing, and duplicate requests check the status and either return the stored result or indicate it&#x27;s still processing. Now I&#x27;d like to shift gears to your frontend work. At Company Y, you built React applications that consumed REST APIs. Can you describe a specific scenario where you had to handle a slow or unreliable API response in the UI? What state management approach did you use, and how did you implement the user experience around loading states, errors, and retries?</p></article><article class="q" style="--c:#2F6FB5"><header><span class="num">Q7</span><span class="slot">frontend development</span><span class="chip ok">grounded in CV</span></header><p>That&#x27;s a good start on handling the loading states and preventing duplicate requests. You mentioned on your CV that you used React Query for state management and data fetching, with features like optimistic updates, caching, and error boundaries. Walk me through how you actually implemented the retry logic for that slow or unreliable API - did you use React Query&#x27;s built-in retry capabilities, or did you build custom retry logic? And what did the error state look like to the user - just a message, or did you give them a manual retry button, and if so, how did you wire that up?</p></article><article class="q" style="--c:#2F6FB5"><header><span class="num">Q8</span><span class="slot">frontend development</span></header><p>Good - you&#x27;re using React Query&#x27;s built-in retry mechanism and providing a manual retry option when all automatic retries fail. Let&#x27;s get into the specifics of that implementation. In React Query, how did you configure the retry count and delay between attempts? And when the user clicks the retry button after all automatic retries have failed, what specific React Query method or approach did you use to trigger a fresh attempt? Walk me through the code-level details of how that manual retry works.</p></article><article class="q" style="--c:#2F6FB5"><header><span class="num">Q9</span><span class="slot">frontend development</span></header><p>You explained the automatic retry configuration, but you didn&#x27;t finish explaining the manual retry button. When the user clicks that retry button after all automatic retries have failed, what specific React Query method do you call to trigger a fresh attempt? What does that button&#x27;s onClick handler actually do?</p></article><article class="q" style="--c:#B23A48"><header><span class="num">Q10</span><span class="slot">cross-boundary debugging</span></header><p>That&#x27;s correct - refetch() is the right method to trigger a fresh query attempt. Now I&#x27;d like to explore your debugging skills across the stack, since the role requires troubleshooting issues that span both UI and backend. Can you describe a specific time when you had to debug an issue where the frontend was displaying unexpected or incorrect data, and you had to trace the problem through the API layer to find the root cause? Walk me through how you approached the investigation - what tools did you use, and what did you ultimately find was causing the issue?</p></article><article class="q" style="--c:#B23A48"><header><span class="num">Q11</span><span class="slot">cross-boundary debugging</span></header><p>That&#x27;s a good general debugging process, but I&#x27;d like to hear about a specific instance where you actually had to do this. Can you give me a concrete example? What was the symptom the user or you saw in the UI, what did you find when you looked at the network tab, what did the backend logs reveal, and what turned out to be the actual root cause of the issue? Walk me through a real debugging story from start to finish.</p></article></div>
+  <div class="chainmark">Nobody ever asked about <strong>code quality, review and documentation</strong>
+  &mdash; the sixth competency of a role whose deliverable is written work. The interview ran out of
+  time inside its third subject.</div>
+</section>
+
+<section>
+  <div class="sechead"><div class="eyebrow">solution transcript</div>
+  <h2>Every question the scheduled interviewer asked</h2></div>
+  <p>Here the topic is chosen by <span class="mono">decide_next()</span> &mdash; sixty lines that take the
+  frozen competency plan and the clock, and have no parameter for the transcript. The model still writes
+  every question and still anchors it in the CV; it just does not pick the subject.</p>
+  <div class="qs"><article class="q" style="--c:#2F6FB5"><header><span class="num">Q1</span><span class="slot">frontend development</span><span class="chip kind">primary</span></header><p>Describe a time when you encountered a difficult technical challenge while building one of the React dashboards for the operations team - what was the challenge, how did you solve it, and what was the outcome?</p></article><article class="q" style="--c:#2F6FB5"><header><span class="num">Q2</span><span class="slot">frontend development</span><span class="chip kind">follow-up</span></header><p>You built responsive dashboards for operations teams - describe a time when you had to make a dashboard work across different screen sizes, what technical decisions you made in React to achieve that, and how it turned out?</p></article><article class="q" style="--c:#7B4BA8"><header><span class="num">Q3</span><span class="slot">backend development</span><span class="chip kind">primary</span><span class="chip drift">carry-over</span></header><p>Describe a time when you had to implement new functionality in the payment microservices for one of the payment methods - credit card, boleto or Pix - what was the requirement, what you built, and how it worked out?</p></article><article class="q" style="--c:#B5762A"><header><span class="num">Q4</span><span class="slot">the API contract</span><span class="chip kind">primary</span><span class="chip drift">carry-over</span></header><p>Describe a time when you had to change a REST API contract that was already being used by one of the React dashboards - what drove the change, how you handled it, and what the outcome was?</p></article><article class="q" style="--c:#157A6E"><header><span class="num">Q5</span><span class="slot">the data layer</span><span class="chip kind">primary</span></header><p>Describe a time when you optimized the SQL queries for regulatory reporting files in the payments processing system - what was causing the 20-minute generation time, what you did to bring it down to 1.5 minutes, and how it turned out?</p></article><article class="q" style="--c:#B23A48"><header><span class="num">Q6</span><span class="slot">cross-boundary debugging</span><span class="chip kind">primary</span><span class="chip ok">grounded in CV</span></header><p>Imagine the operations dashboard is displaying incorrect payment counts for Pix transactions compared to what you see when querying the database directly - how would you approach debugging this to determine whether the issue is in the frontend, the backend API, or somewhere else?</p></article><article class="q" style="--c:#4F7A28"><header><span class="num">Q7</span><span class="slot">code quality &amp; review</span><span class="chip kind">primary</span><span class="chip drift">carry-over</span></header><p>Describe a time when you reviewed code in the payment microservices that violated the Clean Architecture principles - what was the violation, how you addressed it in your review, and what was the outcome?</p></article></div>
+  <div class="chainmark good">Same candidate, same opening answer, same model. Six competencies in rank
+  order, one follow-up. This interview ended because the clock ran out, not because the subject did.</div>
+</section>
+
+<section>
+  <div class="sechead"><div class="eyebrow">results</div><h2>The comparison</h2></div>
+  <div class="tblwrap"><table>
+    <thead><tr><th>Metric</th><th class="n">Baseline</th><th class="n">Solution</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Coverage of the 6 competencies</strong> <span class="muted">(primary)</span></td>
+        <td class="n">5/6</td><td class="n">6/6</td>
+        <td class="win">+1 &mdash; code quality was never asked in the baseline</td></tr>
+      <tr><td>Longest chain on one competency</td><td class="n">4</td><td class="n">2</td>
+        <td class="win">halved, and capped in code at 1 + max_followups</td></tr>
+      <tr><td>Distinct subjects actually discussed</td><td class="n">3</td><td class="n">6</td>
+        <td class="win">what the transcript shows, not what the labels say</td></tr>
+      <tr><td>Questions anchored in the candidate's CV <span class="muted">(higher is better)</span></td>
+        <td class="n">9%</td><td class="n">14%</td>
+        <td class="win">more personalised, not less</td></tr>
+      <tr><td>Questions chasing the candidate's own vocabulary <span class="muted">(lower is better)</span></td>
+        <td class="n">18%</td><td class="n">43%</td>
+        <td class="lose">worse &mdash; see below</td></tr>
+      <tr><td>Questions asked <span class="muted">(mean answer 109.9s vs 134.3s)</span></td>
+        <td class="n">11</td><td class="n">7</td>
+        <td class="muted">fewer, because the answers were longer</td></tr>
+    </tbody></table></div>
+  <div class="note"><strong>The carry-over row went the wrong way, and it is published as it came out.</strong>
+  This rung changes exactly one thing against the baseline &mdash; the scheduler picks the topic &mdash; and
+  the model is still handed the whole transcript to write the wording with, so it still reaches for the
+  candidate's vocabulary. It just cannot leave the competency any more. Removing the transcript is the
+  next rung's single job, and this number is what it will be judged on.</div>
+  <div class="note"><strong>And read the last row beside coverage.</strong> Answers are not capped, so a
+  respondent who talks longer takes fewer questions and could cover less &mdash; which would look exactly
+  like an interviewer getting worse. The solution covered more competencies in <em>fewer</em> questions,
+  and that is the direction the respondent cannot explain.</div>
+</section>
+
+<section>
+  <div class="sechead"><div class="eyebrow">changelog</div>
+  <h2>The change that mattered, and the one that was removed</h2></div>
+  <div class="cols">
+    <div class="card">
+      <div class="eyebrow">biggest contributor</div>
+      <h3>The scheduler &mdash; 60 lines that never read an answer</h3>
+      <p><span class="mono">decide_next()</span> takes the frozen competency plan and the clock and returns
+      the next action. There is no parameter for the transcript, so tunneling is not discouraged &mdash; it is
+      unrepresentable. Everything else on the ladder refines a guarantee this one function already makes.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">removed experiment</div>
+      <h3>The keyword labeller &mdash; deleted after measuring it</h3>
+      <p>Coverage was meant to be resolved by matching slot keywords first, with a model judge only for the
+      hard cases. Over the real baseline run it resolved <strong>0 of 11</strong> questions and mislabelled
+      two: <span class="mono">React Query</span> decomposes into <span class="mono">react</span> +
+      <span class="mono">query</span>, and <span class="mono">query</span> belongs to the data layer, so two
+      purely frontend questions read as reaching into it. Deleted rather than kept as decoration.</p>
+    </div>
+  </div>
+  <div class="note"><strong>What deleting it taught, and it cost a published number.</strong> The cause was
+  structural, not a keyword needing a tweak: <span class="mono">api_contract</span> and
+  <span class="mono">cross_boundary_debugging</span> are <em>relational</em> competencies, defined in the
+  other competencies' vocabulary, and no word-matcher separates a question about the boundary from one that
+  merely names both sides of it. The same audit found the carry-over guardrail counting
+  <span class="mono">backend</span>, <span class="mono">api</span> and <span class="mono">request</span> as
+  drift &mdash; reporting 100% on the baseline while missing the five consecutive questions about one
+  idempotency key. Corrected to 18%, and both numbers are published.</div>
+</section>
+
+<section>
+  <div class="sechead"><div class="eyebrow">stated plainly</div>
+  <h2>What this report does not show</h2></div>
+  <div class="note">I pre-registered the prediction that the baseline would cover &le;2/6. It covered 5/6,
+  and that is recorded as a <strong>failed prediction</strong> rather than reworded. Coverage is also not a
+  stable measurement &mdash; three runs of the judge over the same record returned 5/6, 5/6 and 4/6, which is
+  why the number carrying the argument here is <span class="mono">longest_chain</span>, where no model is
+  involved. This is one candidate, one role, one model: every interview costs a human 25 minutes, which is
+  the honest reason there are two of them and not twenty. And two further layers &mdash; hiding the transcript,
+  and a checker that verifies each question before it is asked &mdash; are built and tested but not yet sat,
+  so nothing here claims them.</div>
+</section>
+
+<footer>
+  Baseline record: <span class="mono">evals/results/iteration-00/session-20260831-120601.jsonl</span><br>
+  Solution record: <span class="mono">evals/results/iteration-01/session-20260831-153049.jsonl</span><br>
+  Session records are append-only and never rewritten. Every figure above is derived from them by
+  <span class="mono">interview measure</span>, and nothing is hand-entered.
+</footer>
+
+</div>

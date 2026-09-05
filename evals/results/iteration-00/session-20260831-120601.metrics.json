@@ -1,0 +1,161 @@
+{
+  "session": "session-20260831-120601.jsonl",
+  "run_kind": "measurement",
+  "experiment_lock_id": "7c0d8c6dbd84",
+  "metadata": {
+    "run_kind": "measurement",
+    "iteration": 0,
+    "provider": "claude_cli",
+    "model": "claude-sonnet-4-5-20250929",
+    "commit": "f756b59",
+    "role": "roles/fullstack",
+    "case": "evals/cases/case-01",
+    "slot_ids": [
+      "frontend",
+      "backend",
+      "api_contract",
+      "data_layer",
+      "cross_boundary_debugging",
+      "code_quality"
+    ],
+    "slot_plan_frozen_at": "2026-08-29",
+    "total_seconds": 1500,
+    "expected_answer_seconds": 120,
+    "experiment": null
+  },
+  "denominator": 6,
+  "coverage": {
+    "covered_slots": [
+      "api_contract",
+      "backend",
+      "cross_boundary_debugging",
+      "data_layer",
+      "frontend"
+    ],
+    "missed_slots": [
+      "code_quality"
+    ],
+    "value": 0.833
+  },
+  "carry_over_rate": 0.182,
+  "grounding_rate": 0.091,
+  "allocation": {
+    "questions": 11,
+    "unresolved": 0,
+    "slot_histogram": {
+      "api_contract": 2,
+      "backend": 1,
+      "cross_boundary_debugging": 3,
+      "data_layer": 1,
+      "frontend": 4
+    },
+    "longest_chain": 4,
+    "max_slot_share": 0.364,
+    "normalised_entropy": 0.819,
+    "most_asked_slot": "frontend"
+  },
+  "schedule_ceiling": null,
+  "questions_measured": 11,
+  "answer_seconds": {
+    "count": 11,
+    "mean": 109.9,
+    "median": 107.9,
+    "min": 18.4,
+    "max": 214.9,
+    "total": 1208.5
+  },
+  "resolved_by": {
+    "judge": 11,
+    "unresolved": 0
+  },
+  "questions": [
+    {
+      "index": 1,
+      "text": "That's a solid background, Stefani. I'd like to dig deeper into your work at Company X since it sounds like the most technically complex environment you've worked in. You mentioned you developed and maintained payment microservices processing thousands of daily transactions. Can you walk me through a specific technical challenge you encountered in that work where you had to solve a problem that spanned both the frontend and backend? What was the issue, how did you approach it, and what was the solution?",
+      "slot_id": "cross_boundary_debugging",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 2,
+      "text": "Good example - idempotency is critical for payment systems. Let me dig into the implementation details. Where exactly did you generate the idempotency key - was it on the frontend before making the API call, or on the backend when receiving the request? And once you had the key, how did you actually check for duplicates and prevent the race condition where two identical requests might arrive at nearly the same time?",
+      "slot_id": "api_contract",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 3,
+      "text": "I want to make sure I understand your implementation correctly. You said you generate the idempotency key after receiving the request on the backend. But if the key is generated server-side for each incoming request, how would two duplicate requests end up with the same idempotency key? Wouldn't each request generate a different key?",
+      "slot_id": "backend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 4,
+      "text": "I think there's a logical issue with what you're describing. If the backend generates a new idempotency key for each incoming request, then duplicate requests would each get a different key, and your conditional write wouldn't help - they'd all succeed because they'd all have different keys. For idempotency to work, duplicate requests need to arrive with the same key. So where does the idempotency key actually come from in your implementation? What are the inputs you use to generate it, and who generates it - the client or the server?",
+      "slot_id": "api_contract",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 5,
+      "text": "That makes much more sense - deriving the key from a stable identifier like the transaction ID. Now let's talk about the conditional write itself. What database were you using for this, and what specific database operation or feature did you use to implement the conditional write? And after the conditional write succeeds for the first request, walk me through what happens next - how do you ensure the first request completes the payment processing, stores the result, and how do subsequent duplicate requests retrieve that result instead of processing again?",
+      "slot_id": "data_layer",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 6,
+      "text": "Good explanation - that's a solid idempotency pattern. You update the record with the final status after processing, and duplicate requests check the status and either return the stored result or indicate it's still processing. Now I'd like to shift gears to your frontend work. At Company Y, you built React applications that consumed REST APIs. Can you describe a specific scenario where you had to handle a slow or unreliable API response in the UI? What state management approach did you use, and how did you implement the user experience around loading states, errors, and retries?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 7,
+      "text": "That's a good start on handling the loading states and preventing duplicate requests. You mentioned on your CV that you used React Query for state management and data fetching, with features like optimistic updates, caching, and error boundaries. Walk me through how you actually implemented the retry logic for that slow or unreliable API - did you use React Query's built-in retry capabilities, or did you build custom retry logic? And what did the error state look like to the user - just a message, or did you give them a manual retry button, and if so, how did you wire that up?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": true
+    },
+    {
+      "index": 8,
+      "text": "Good - you're using React Query's built-in retry mechanism and providing a manual retry option when all automatic retries fail. Let's get into the specifics of that implementation. In React Query, how did you configure the retry count and delay between attempts? And when the user clicks the retry button after all automatic retries have failed, what specific React Query method or approach did you use to trigger a fresh attempt? Walk me through the code-level details of how that manual retry works.",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 9,
+      "text": "You explained the automatic retry configuration, but you didn't finish explaining the manual retry button. When the user clicks that retry button after all automatic retries have failed, what specific React Query method do you call to trigger a fresh attempt? What does that button's onClick handler actually do?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 10,
+      "text": "That's correct - refetch() is the right method to trigger a fresh query attempt. Now I'd like to explore your debugging skills across the stack, since the role requires troubleshooting issues that span both UI and backend. Can you describe a specific time when you had to debug an issue where the frontend was displaying unexpected or incorrect data, and you had to trace the problem through the API layer to find the root cause? Walk me through how you approached the investigation - what tools did you use, and what did you ultimately find was causing the issue?",
+      "slot_id": "cross_boundary_debugging",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 11,
+      "text": "That's a good general debugging process, but I'd like to hear about a specific instance where you actually had to do this. Can you give me a concrete example? What was the symptom the user or you saw in the UI, what did you find when you looked at the network tab, what did the backend logs reveal, and what turned out to be the actual root cause of the issue? Walk me through a real debugging story from start to finish.",
+      "slot_id": "cross_boundary_debugging",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    }
+  ]
+}

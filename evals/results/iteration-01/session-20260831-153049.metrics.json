@@ -1,0 +1,149 @@
+{
+  "session": "session-20260831-153049.jsonl",
+  "run_kind": "measurement",
+  "experiment_lock_id": "7c0d8c6dbd84",
+  "interrupted": false,
+  "metadata": {
+    "run_kind": "measurement",
+    "iteration": 1,
+    "provider": "claude_cli",
+    "model": "claude-sonnet-4-5-20250929",
+    "commit": "f756b59",
+    "role": "roles/fullstack",
+    "case": "evals/cases/case-01",
+    "slot_ids": [
+      "frontend",
+      "backend",
+      "api_contract",
+      "data_layer",
+      "cross_boundary_debugging",
+      "code_quality"
+    ],
+    "slot_plan_frozen_at": "2026-08-29",
+    "total_seconds": 1500,
+    "expected_answer_seconds": 120,
+    "experiment": {
+      "lock_id": "7c0d8c6dbd84",
+      "frozen_at": "2026-08-31T12:31:32Z",
+      "role_path": "roles/fullstack",
+      "case_path": "evals/cases/case-01",
+      "role_sha256": "0cd28bd0962f02d117b03cd3dc14c7043eccec69c035980f2e864209c91bccff",
+      "slot_plan_fingerprint": "211aa132eaa8d339828e5a9bbe2237b82c99123d53439e5bc20dd1f581f2dc18",
+      "cv_source_sha256": "ec76de419b54a0573b4fcc216d5081f9323040e8cdecf3351b0397cea0a4643b",
+      "resume_evidence_sha256": "b0ea8b38a92c10341af57d6d72625efd2edffaca504cdd33c88d61ccb8b4b120",
+      "opening_answer_sha256": "79c5782e54df851e80440515b7116dd23360e3cae3f733af304857682688f4ae",
+      "budget": {
+        "total_seconds": 1500,
+        "expected_answer_seconds": 120,
+        "turn_overhead_seconds": 15,
+        "max_slots": 6
+      },
+      "tracked": {
+        "response_brief_sha256": "292a697850db34744848843c366c85e7d4630f780dbdb9bfd4eb5c345949f9da"
+      }
+    }
+  },
+  "denominator": 6,
+  "coverage": {
+    "covered_slots": [
+      "api_contract",
+      "backend",
+      "code_quality",
+      "cross_boundary_debugging",
+      "data_layer",
+      "frontend"
+    ],
+    "missed_slots": [],
+    "value": 1.0
+  },
+  "carry_over_rate": 0.429,
+  "grounding_rate": 0.143,
+  "allocation": {
+    "questions": 7,
+    "unresolved": 0,
+    "slot_histogram": {
+      "api_contract": 1,
+      "backend": 1,
+      "code_quality": 1,
+      "cross_boundary_debugging": 1,
+      "data_layer": 1,
+      "frontend": 2
+    },
+    "longest_chain": 2,
+    "max_slot_share": 0.286,
+    "normalised_entropy": 0.976,
+    "most_asked_slot": "frontend"
+  },
+  "schedule_ceiling": 2,
+  "questions_measured": 7,
+  "answer_seconds": {
+    "count": 7,
+    "mean": 134.3,
+    "median": 122.7,
+    "min": 93.3,
+    "max": 249.7,
+    "total": 939.9
+  },
+  "resolved_by": {
+    "judge": 7,
+    "unresolved": 0
+  },
+  "questions": [
+    {
+      "index": 1,
+      "text": "Describe a time when you encountered a difficult technical challenge while building one of the React dashboards for the operations team - what was the challenge, how did you solve it, and what was the outcome?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 2,
+      "text": "You built responsive dashboards for operations teams - describe a time when you had to make a dashboard work across different screen sizes, what technical decisions you made in React to achieve that, and how it turned out?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 3,
+      "text": "Describe a time when you had to implement new functionality in the payment microservices for one of the payment methods - credit card, boleto or Pix - what was the requirement, what you built, and how it worked out?",
+      "slot_id": "backend",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 4,
+      "text": "Describe a time when you had to change a REST API contract that was already being used by one of the React dashboards - what drove the change, how you handled it, and what the outcome was?",
+      "slot_id": "api_contract",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 5,
+      "text": "Describe a time when you optimized the SQL queries for regulatory reporting files in the payments processing system - what was causing the 20-minute generation time, what you did to bring it down to 1.5 minutes, and how it turned out?",
+      "slot_id": "data_layer",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 6,
+      "text": "Imagine the operations dashboard is displaying incorrect payment counts for Pix transactions compared to what you see when querying the database directly - how would you approach debugging this to determine whether the issue is in the frontend, the backend API, or somewhere else?",
+      "slot_id": "cross_boundary_debugging",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": true
+    },
+    {
+      "index": 7,
+      "text": "Describe a time when you reviewed code in the payment microservices that violated the Clean Architecture principles - what was the violation, how you addressed it in your review, and what was the outcome?",
+      "slot_id": "code_quality",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    }
+  ]
+}

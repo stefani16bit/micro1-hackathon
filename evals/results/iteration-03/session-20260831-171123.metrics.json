@@ -1,0 +1,150 @@
+{
+  "session": "session-20260831-171123.jsonl",
+  "run_kind": "measurement",
+  "experiment_lock_id": "7c0d8c6dbd84",
+  "interrupted": false,
+  "metadata": {
+    "run_kind": "measurement",
+    "iteration": 3,
+    "provider": "claude_cli",
+    "model": "claude-sonnet-4-5-20250929",
+    "commit": "f756b59",
+    "role": "roles/fullstack",
+    "case": "evals/cases/case-01",
+    "slot_ids": [
+      "frontend",
+      "backend",
+      "api_contract",
+      "data_layer",
+      "cross_boundary_debugging",
+      "code_quality"
+    ],
+    "slot_plan_frozen_at": "2026-08-29",
+    "total_seconds": 1500,
+    "expected_answer_seconds": 120,
+    "max_followups_per_slot": 1,
+    "experiment": {
+      "lock_id": "7c0d8c6dbd84",
+      "frozen_at": "2026-08-31T12:31:32Z",
+      "role_path": "roles/fullstack",
+      "case_path": "evals/cases/case-01",
+      "role_sha256": "0cd28bd0962f02d117b03cd3dc14c7043eccec69c035980f2e864209c91bccff",
+      "slot_plan_fingerprint": "211aa132eaa8d339828e5a9bbe2237b82c99123d53439e5bc20dd1f581f2dc18",
+      "cv_source_sha256": "ec76de419b54a0573b4fcc216d5081f9323040e8cdecf3351b0397cea0a4643b",
+      "resume_evidence_sha256": "b0ea8b38a92c10341af57d6d72625efd2edffaca504cdd33c88d61ccb8b4b120",
+      "opening_answer_sha256": "79c5782e54df851e80440515b7116dd23360e3cae3f733af304857682688f4ae",
+      "budget": {
+        "total_seconds": 1500,
+        "expected_answer_seconds": 120,
+        "turn_overhead_seconds": 15,
+        "max_slots": 6
+      },
+      "tracked": {
+        "response_brief_sha256": "f9c854c9b04d5eac8e3a0e538cb2e370569b350ff82ebdbc6713cf0c8bd44b83"
+      }
+    }
+  },
+  "denominator": 6,
+  "coverage": {
+    "covered_slots": [
+      "api_contract",
+      "backend",
+      "code_quality",
+      "cross_boundary_debugging",
+      "data_layer",
+      "frontend"
+    ],
+    "missed_slots": [],
+    "value": 1.0
+  },
+  "carry_over_rate": 0.286,
+  "grounding_rate": 0.143,
+  "allocation": {
+    "questions": 7,
+    "unresolved": 0,
+    "slot_histogram": {
+      "api_contract": 1,
+      "backend": 1,
+      "code_quality": 1,
+      "cross_boundary_debugging": 1,
+      "data_layer": 1,
+      "frontend": 2
+    },
+    "longest_chain": 2,
+    "max_slot_share": 0.286,
+    "normalised_entropy": 0.976,
+    "most_asked_slot": "frontend"
+  },
+  "schedule_ceiling": 2,
+  "questions_measured": 7,
+  "answer_seconds": {
+    "count": 7,
+    "mean": 114.9,
+    "median": 119.0,
+    "min": 81.4,
+    "max": 132.7,
+    "total": 804.4
+  },
+  "resolved_by": {
+    "judge": 7,
+    "unresolved": 0
+  },
+  "questions": [
+    {
+      "index": 1,
+      "text": "Pick one of the exception or status tracking features you built in React and TypeScript - what was driving the need, what did you implement, and how did it turn out?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 2,
+      "text": "What is the most demanding thing you have built with frontend development, and what made it demanding?",
+      "slot_id": "frontend",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 3,
+      "text": "Describe a time when you had to troubleshoot or optimize the processing of one of your payment methods—credit card, boleto, or Pix—in your microservices?",
+      "slot_id": "backend",
+      "resolved_by": "judge",
+      "carry_over": true,
+      "grounded": false
+    },
+    {
+      "index": 4,
+      "text": "Describe a time when you had to define or modify the API contract for one of your REST or GraphQL endpoints - what was the situation, what did you do, and how did it turn out?",
+      "slot_id": "api_contract",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": true
+    },
+    {
+      "index": 5,
+      "text": "Tell me about a time the data layer was the bottleneck - how did you find it, and what did you change?",
+      "slot_id": "data_layer",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 6,
+      "text": "Suppose you were asked to take debugging across the frontend and backend boundary on for a team that has never done it - how would you start?",
+      "slot_id": "cross_boundary_debugging",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    },
+    {
+      "index": 7,
+      "text": "Walk me through a specific code review you did in your Clean Architecture project - what quality issues did you catch, and how did you address them?",
+      "slot_id": "code_quality",
+      "resolved_by": "judge",
+      "carry_over": false,
+      "grounded": false
+    }
+  ]
+}
