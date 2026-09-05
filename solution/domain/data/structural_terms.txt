@@ -1,0 +1,58 @@
+# Structural vocabulary, excluded from drift detection only.
+#
+# PREREGISTRATION.md section 2 defines carry-over as a question reaching for "a TECHNOLOGY the
+# candidate raised". "backend" is not a technology; it is a layer. Measured over iteration 0, the
+# carry-over rate counted `backend`, `api`, `ui`, `request` and `query` on eleven questions out of
+# eleven, and was blind to `idempotency`, `refetch` and `race condition` - the terms the interview
+# actually chased. The rate said 100% and was measuring the domain, not the drift.
+#
+# THE TEST FOR MEMBERSHIP, so this never becomes a list tuned until the number looks right:
+# a term belongs here when it names a layer, a tier, or a generic artifact of any web
+# application - one that would appear in a question about ANY of the six competencies. A term
+# that would only appear in a question about one or two of them is discriminative and stays out,
+# however generic it sounds.
+#
+# WHAT IS DELIBERATELY NOT HERE, and why it matters: no named technology. `react`, `django`,
+# `dynamodb`, `sql`, `schema`, `migration`, `database`, `rest`, `graphql`, `microservices` all
+# stay countable. Over-stoplisting would empty the metric quietly, which is the opposite failure
+# and a harder one to notice - tests/metrics/test_rates.py guards against it.
+#
+# This list is used ONLY by is_carry_over and is_grounded. It is not consulted when deciding
+# which competency a question was about.
+
+# --- layers and tiers ---
+frontend
+front-end
+backend
+back-end
+ui
+server
+server-side
+client
+client-side
+
+# --- generic plumbing present in any question about any competency ---
+api
+apis
+http
+request
+requests
+response
+responses
+service
+services
+component
+components
+
+# --- the acronym heuristic in lexicon.py reads any all-caps word as technical, and "ID" is not ---
+id
+ids
+
+# --- the one debatable entry, recorded as debatable ---
+# `query` costs something real: "a slow SQL query you fixed" is genuine data-layer vocabulary and
+# stops counting as drift. It is here anyway because it is a generic noun across all three tiers,
+# and because "React Query" - a frontend library - decomposes into `react` + `query`, which made
+# two purely frontend questions register as reaching into the data layer. A reader who disagrees
+# has this paragraph and can delete the line; the effect on the numbers is one re-measure away.
+query
+queries

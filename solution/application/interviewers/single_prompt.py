@@ -44,11 +44,9 @@ class SinglePromptInterviewer(Interviewer):
         self._budget = budget
 
     def next_utterance(self, transcript: Transcript) -> Utterance | None:
-        elapsed_minutes = int(transcript.elapsed_seconds // 60)
         prompt = fill(
             self._user_template,
             transcript=transcript.render() or "(the interview has not started yet)",
-            elapsed_minutes=str(elapsed_minutes),
         )
         response = self._provider.complete_json(
             LlmRequest(
@@ -60,8 +58,6 @@ class SinglePromptInterviewer(Interviewer):
         )
         return Utterance(
             text=str(response.payload["message"]).strip(),
-            # Iteration 0 has no slot concept: it cannot label what it is asking about,
-            # which is exactly why the measurement cascade has to label it afterwards.
             kind="opening" if not transcript.entries else "question",
             slot_id=None,
         )
